@@ -67,7 +67,7 @@ export function rePinAllDataToIPFS(
 	shouldProvide: boolean,
 ): void {
 	if (!shouldPin) {
-		console.log(`[Accumulator] ℹ️ rePinAllDataToIPFS skipped because this.shouldPin == false`)
+		console.log(`[Client] ℹ️ rePinAllDataToIPFS skipped because this.shouldPin == false`)
 		return
 	}
 	storageAdapter.get("dag:trail:maxIndex").then((result) => {
@@ -75,14 +75,14 @@ export function rePinAllDataToIPFS(
 		if (toIndex === -1) return // Launch the pinning process in the background
 		;(async () => {
 			console.log(
-				`[Accumulator] \u{1F4CC} Attempting to pin all ${toIndex + 1} CIDs (leaves, root, and intermediate nodes) to IPFS. Running in background. Will update you...`,
+				`[Client] \u{1F4CC} Attempting to pin all ${toIndex + 1} CIDs (leaves, root, and intermediate nodes) to IPFS. Running in background. Will update you...`,
 			)
 			let count = 0
 			let failed = 0
 			for (let i = 0; i <= toIndex; i++) {
 				try {
 					const pair: CIDDataPair | null = await getCIDDataPairFromDB(storageAdapter, i)
-					if (!pair) throw new Error(`[Accumulator] Expected CIDDataPair for leaf ${i}`)
+					if (!pair) throw new Error(`[Client] Expected CIDDataPair for leaf ${i}`)
 
 					const putOk = await putPinProvideToIPFS(ipfs, shouldPut, shouldProvide, pair.cid, pair.dagCborEncodedData)
 					if (!putOk) {
@@ -91,13 +91,13 @@ export function rePinAllDataToIPFS(
 					}
 					count++
 					if (count % 1000 === 0) {
-						console.log(`[Accumulator] \u{1F4CC} UPDATE: Re-pinned ${count} CIDs to IPFS so far. Still working...`)
+						console.log(`[Client] \u{1F4CC} UPDATE: Re-pinned ${count} CIDs to IPFS so far. Still working...`)
 					}
 				} catch (err) {
-					console.error(`[Accumulator] Error during optimistic IPFS pinning:`, err)
+					console.error(`[Client] Error during optimistic IPFS pinning:`, err)
 				}
 			}
-			console.log(`[Accumulator] \u{2705} Pinned ${count} CIDs to IPFS (${failed} failures). Done!`)
+			console.log(`[Client] 📌 Pinned ${count} CIDs to IPFS (${failed} failures). Done!`)
 		})()
 	})
 }
@@ -115,7 +115,7 @@ export async function putPinProvideToIPFS(
 		try {
 			await ipfs.putBlock(cid, dagCborEncodedData)
 		} catch (err) {
-			console.error(`[Accumulator] \u{1F4A5} IPFS put failed for CID ${cid}:`, err)
+			console.error(`[Client] \u{1F4A5} IPFS put failed for CID ${cid}:`, err)
 			return false
 		}
 	}
@@ -123,7 +123,7 @@ export async function putPinProvideToIPFS(
 		try {
 			await ipfs.provide(cid)
 		} catch (err) {
-			console.error(`[Accumulator] IPFS provide failed for CID ${cid}:`, err)
+			console.error(`[Client] IPFS provide failed for CID ${cid}:`, err)
 		}
 	}
 	return true

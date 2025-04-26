@@ -47,9 +47,9 @@ export async function syncBackwardsFromLatest(
 	const highestLeafIndexInDB = await getHighestContiguousLeafIndexWithData(storageAdapter)
 
 	console.log(
-		`[Accumulator] \u{1F501} Syncing backwards from block ${meta.previousInsertBlockNumber} to block ${meta.deployBlockNumber} (${meta.previousInsertBlockNumber - meta.deployBlockNumber} blocks), grabbing ${maxBlockRangePerRpcCall} blocks per RPC call.`,
+		`[Client] \u{1F501} Syncing backwards from block ${meta.previousInsertBlockNumber} to block ${meta.deployBlockNumber} (${meta.previousInsertBlockNumber - meta.deployBlockNumber} blocks), grabbing ${maxBlockRangePerRpcCall} blocks per RPC call.`,
 	)
-	console.log(`[Accumulator] \u{1F50E} Simultaneously checking IPFS for older root CIDs as we discover them.`)
+	console.log(`[Client] \u{1F50E} Simultaneously checking IPFS for older root CIDs as we discover them.`)
 
 	// Compute the current root CID from the current peaks
 	const currentRootCID = await getRootCIDFromPeaks(peaks.map((p) => p.cid))
@@ -77,7 +77,7 @@ export async function syncBackwardsFromLatest(
 	// --- Batch event fetching ---
 	for (let endBlock = currentBlock; endBlock >= minBlock; endBlock -= maxBlockRangePerRpcCall) {
 		const startBlock = Math.max(minBlock, endBlock - maxBlockRangePerRpcCall + 1)
-		console.log(`[Accumulator] \u{1F4E6} Checking blocks ${startBlock} to ${endBlock} for LeafInsert events...`)
+		console.log(`[Client] \u{1F4E6} Checking blocks ${startBlock} to ${endBlock} for LeafInsert events...`)
 		// Get the LeafInsert event logs
 		const logs: NormalizedLeafInsertEvent[] = await getLeafInsertLogs({
 			ethereumHttpRpcUrl,
@@ -87,13 +87,13 @@ export async function syncBackwardsFromLatest(
 			eventTopicOverride,
 		})
 
-		if (logs.length > 0) console.log(`[Accumulator] \u{1F343} Found ${logs.length} LeafInsert events`)
+		if (logs.length > 0) console.log(`[Client] \u{1F343} Found ${logs.length} LeafInsert events`)
 
 		// Process the LeafInsert event logs
 		for (const event of logs.sort((a, b) => b.leafIndex - a.leafIndex)) {
 			if (event.leafIndex !== --oldestProcessedLeafIndex)
 				throw new Error(
-					`[Accumulator] Expected leafIndex ${oldestProcessedLeafIndex} but got leafIndex ${event.leafIndex}`,
+					`[Client] Expected leafIndex ${oldestProcessedLeafIndex} but got leafIndex ${event.leafIndex}`,
 				)
 			// Compute previous root CID and peaks
 			const { previousRootCID, previousPeaksWithHeights } = await computePreviousRootCIDAndPeaksWithHeights(
@@ -133,10 +133,10 @@ export async function syncBackwardsFromLatest(
 			const missing = await getLeafIndexesWithMissingNewData(storageAdapter, currentLeafIndex)
 			if (missing.length !== 0) throw new Error("Unexpectedly missing newData for leaf indices: " + missing.join(", "))
 			console.log(
-				`[Accumulator] \u{1F4E5} Downloaded all data for root CID ${foundIpfsCid?.toString() ?? "undefined"} from IPFS.`,
+				`[Client] \u{1F4E5} Downloaded all data for root CID ${foundIpfsCid?.toString() ?? "undefined"} from IPFS.`,
 			)
-			console.log(`[Accumulator] \u{1F64C} Successfully resolved all remaining data from IPFS!`)
-			console.log(`[Accumulator] \u{2705} Your accumulator client is synced!`)
+			console.log(`[Client] \u{1F64C} Successfully resolved all remaining data from IPFS!`)
+			console.log(`[Client] 🌲 Your accumulator client has acquired all data!`)
 			await storageAdapter.persist()
 			return
 		}
@@ -151,12 +151,12 @@ export async function syncBackwardsFromLatest(
 	// Sanity check to make sure we didn't unexpectedly miss any datda
 	const missing = await getLeafIndexesWithMissingNewData(storageAdapter, currentLeafIndex)
 	if (missing.length !== 0) {
-		throw new Error("[Accumulator] Missing newData for leaf indices: " + missing.join(", "))
+		throw new Error("[Client] Missing newData for leaf indices: " + missing.join(", "))
 	}
 	console.log(
-		"[Accumulator] \u{1F9BE} Fully synced backwards using only event data and local DB data (no data used from IPFS)",
+		"[Client] \u{1F9BE} Fully synced backwards using only event data and local DB data (no data used from IPFS)",
 	)
-	console.log(`[Accumulator] \u{2705} Your accumulator client is synced!`)
+	console.log(`[Client] 🌲 Your accumulator client has acquired all data!`)
 	await storageAdapter.persist()
 }
 
@@ -193,16 +193,16 @@ export async function startLiveSync(
 
 	let useSubscription = false
 	if (ethereumWsRpcUrl) {
-		console.log(`[Accumulator] \u{2705} Detected ETHEREUM_WS_RPC_URL: ${ethereumWsRpcUrl}`)
+		console.log(`[Client] 🔗 Detected ETHEREUM_WS_RPC_URL: ${ethereumWsRpcUrl}`)
 		useSubscription = await detectSubscriptionSupport(ethereumWsRpcUrl)
 		if (!useSubscription) {
-			console.log("[Accumulator] \u{274C} WS endpoint does not support eth_subscribe, falling back to polling.")
+			console.log("[Client] \u{274C} WS endpoint does not support eth_subscribe, falling back to polling.")
 		}
 	} else {
-		console.log("[Accumulator] 👎 No ETHEREUM_WS_RPC_URL provided, will use polling.")
+		console.log("[Client] 👎 No ETHEREUM_WS_RPC_URL provided, will use polling.")
 	}
 	console.log(
-		`[Accumulator] \u{1F440} Using ${useSubscription ? "websocket subscription" : "HTTP polling"} to monitor the chain for new data insertions.`,
+		`[Client] \u{1F440} Using ${useSubscription ? "websocket subscription" : "HTTP polling"} to monitor the chain for new data insertions.`,
 	)
 	if (useSubscription) {
 		startSubscriptionSync(
@@ -271,10 +271,10 @@ export function stopLiveSync(
  */
 export async function detectSubscriptionSupport(wsUrl: string): Promise<boolean> {
 	if (!wsUrl.startsWith("ws://") && !wsUrl.startsWith("wss://")) {
-		console.log(`[Accumulator] 👎 ETHEREUM_WS_RPC_URL is not a ws:// or wss:// URL: ${wsUrl}`)
+		console.log(`[Client] 👎 ETHEREUM_WS_RPC_URL is not a ws:// or wss:// URL: ${wsUrl}`)
 		return false
 	}
-	console.log(`[Accumulator] 🙏 Attempting to open WebSocket and send eth_subscribe to ${wsUrl}...`)
+	console.log(`[Client] 🙏 Attempting to open WebSocket and send eth_subscribe to ${wsUrl}...`)
 	return await new Promise<boolean>((resolve) => {
 		let ws: WebSocket | null = null
 		let finished = false
@@ -445,19 +445,19 @@ export function startSubscriptionSync(
 	eventTopicOverride?: string,
 ): void {
 	if (!ethereumWsRpcUrl) {
-		console.error("[Accumulator] No ETHEREUM_WS_RPC_URL set. Cannot start subscription sync.")
+		console.error("[Client] No ETHEREUM_WS_RPC_URL set. Cannot start subscription sync.")
 		return
 	}
 	if (ws) {
-		console.warn("[Accumulator] Subscription WebSocket already running.")
+		console.warn("[Client] Subscription WebSocket already running.")
 		return
 	}
-	console.log(`[Accumulator] Connecting to WS: ${ethereumWsRpcUrl}`)
+	console.log(`[Client] Connecting to WS: ${ethereumWsRpcUrl}`)
 
 	const newWs = new WebSocket(ethereumWsRpcUrl)
 	setWs(newWs)
 	newWs.onopen = () => {
-		console.log("[Accumulator] WebSocket open. Subscribing to newHeads...")
+		console.log("[Client] WebSocket open. Subscribing to newHeads...")
 		const msg = JSON.stringify({
 			jsonrpc: "2.0",
 			id: 1,
@@ -473,13 +473,13 @@ export function startSubscriptionSync(
 			const data = JSON.parse(event.data)
 			if (data.id === 1 && data.result) {
 				subscriptionId = data.result
-				console.log(`[Accumulator] Subscribed to newHeads. Subscription id: ${subscriptionId}`)
+				console.log(`[Client] Subscribed to newHeads. Subscription id: ${subscriptionId}`)
 				return
 			}
 			// Handle new block notifications
 			if (data.method === "eth_subscription" && data.params && data.params.subscription === subscriptionId) {
 				const blockHash = data.params.result.hash
-				console.log(`[Accumulator] New block: ${blockHash}. Fetching events...`)
+				console.log(`[Client] New block: ${blockHash}. Fetching events...`)
 				// Get latest block number and process new events
 				try {
 					const { meta } = await getAccumulatorData({
@@ -518,14 +518,14 @@ export function startSubscriptionSync(
 				}
 			}
 		} catch (err) {
-			console.error("[Accumulator] Error parsing WS message:", err)
+			console.error("[Client] Error parsing WS message:", err)
 		}
 	}
 	newWs.onerror = (err: any) => {
-		console.error("[Accumulator] WebSocket error:", err)
+		console.error("[Client] WebSocket error:", err)
 	}
 	newWs.onclose = () => {
-		console.log("[Accumulator] WebSocket closed.")
+		console.log("[Client] WebSocket closed.")
 		setWs(undefined)
 	}
 }
@@ -553,7 +553,7 @@ export async function processNewLeafEvent(
 	// if event.leafIndex > highestCommittedLeafIndex + 1:
 	if (event.leafIndex > getHighestCommittedLeafIndex() + 1) {
 		console.log(
-			`[Accumulator] \u{1F4CC} Missing event for leaf indexes ${getHighestCommittedLeafIndex() + 1} to ${event.leafIndex - 1}. Getting them now...`,
+			`[Client] \u{1F4CC} Missing event for leaf indexes ${getHighestCommittedLeafIndex() + 1} to ${event.leafIndex - 1}. Getting them now...`,
 		)
 		// Walk back through the previousInsertBlockNumber's to get the missing leaves
 		const pastEvents: NormalizedLeafInsertEvent[] = await walkBackLeafInsertLogsOrThrow(
@@ -582,7 +582,7 @@ export async function processNewLeafEvent(
 				eventTopicOverride,
 			)
 		}
-		console.log(`[Accumulator] \u{1F44D} Got the missing events.`)
+		console.log(`[Client] \u{1F44D} Got the missing events.`)
 	}
 
 	// Store the event in the DB
@@ -620,24 +620,18 @@ export async function processNewLeafEvent(
 			})
 			if (localRootCid !== onChainRootCid.toString()) {
 				console.warn(
-					`[Accumulator] 🧠 Sanity check: \u{274C} Local (${localRootCid} )and on-chain (${onChainRootCid.toString()}) root CIDs do NOT match!`,
+					`[Client] 🧠 Sanity check: \u{274C} Local (${localRootCid} )and on-chain (${onChainRootCid.toString()}) root CIDs do NOT match!`,
 				)
 			} else {
-				console.log("[Accumulator] 🧠 Sanity check: \u{2705} Local and on-chain root CIDs match!")
+				console.log("[Client] 🧠 Sanity check: 😅 Local and on-chain root CIDs match!")
 			}
 		} catch (err) {
-			console.warn("[Accumulator] 🧠 Sanity check: \u{274C} Failed to compare root CIDs:", err)
+			console.warn("[Client] 🧠 Sanity check: \u{274C} Failed to compare root CIDs:", err)
 		}
 	}
 	// =============================== END SANITY CHECK. ===============================
 
-	console.log(`[Accumulator] \u{1F343} Processed new leaf with index ${event.leafIndex}`)
-}
-
-export function processNewLeaf(index: number, data: string, newLeafSubscribers: newLeafSubscriber[]) {
-	for (const newLeafSubscriber of newLeafSubscribers) {
-		newLeafSubscriber(index, data)
-	}
+	console.log(`[Client] \u{1F343} Processed new leaf with index ${event.leafIndex}`)
 }
 
 export function onNewLeaf(newLeafSubscribers: newLeafSubscriber[], callback: (index: number, data: string) => void): () => void {

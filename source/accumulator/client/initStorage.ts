@@ -12,7 +12,7 @@ export async function initStorage(config: AccumulatorClientConfig): Promise<Stor
 		storageAdapter = new IndexedDBAdapter()
 	} else {
 		const module = await import("../../adapters/storage/JSMapAdapter")
-		storageAdapter = new module.JSMapAdapter(config.DB_PATH)
+		storageAdapter = new module.JSMapAdapter(config.DB_PATH ?? "./.db/accumulator.json")
 	}
 	// Initialize the Storage namespace
 	return getStorageNamespace(storageAdapter)

@@ -48,20 +48,20 @@ export async function rebuildAndProvideMMR(
 	setHighestCommittedLeafIndex: (index: number) => void,
 ): Promise<void> {
 	console.log(
-		`[Accumulator] ⛰️ Rebuilding the Merkle Mountain Range from synced leaves${shouldPin ? " and pinning to IPFS" : ""}. (This can take a while)...`,
+		`[Client] ⛰️ Rebuilding the Merkle Mountain Range from synced leaves${shouldPin ? " and pinning to IPFS" : ""}. (This can take a while)...`,
 	)
 	const fromIndex: number = getHighestCommittedLeafIndex() + 1
 	const toIndex: number = await getHighestContiguousLeafIndexWithData(storageAdapter)
 	if (fromIndex > toIndex)
 		throw new Error(
-			`[Accumulator] Expected to commit leaves from ${fromIndex} to ${toIndex}, but found no newData for leaf ${fromIndex}`,
+			`[Client] Expected to commit leaves from ${fromIndex} to ${toIndex}, but found no newData for leaf ${fromIndex}`,
 		)
 	if (fromIndex === toIndex) return // All leaves already committed
 	for (let i = fromIndex; i <= toIndex; i++) {
 		const record = await getLeafRecord(storageAdapter, i)
-		if (!record || !record.newData) throw new Error(`[Accumulator] Expected newData for leaf ${i}`)
+		if (!record || !record.newData) throw new Error(`[Client] Expected newData for leaf ${i}`)
 		if (!(record.newData instanceof Uint8Array))
-			throw new Error(`[Accumulator] newData for leaf ${i} is not a Uint8Array`)
+			throw new Error(`[Client] newData for leaf ${i} is not a Uint8Array`)
 		await commitLeaf(
 			ipfs,
 			mmr,
@@ -74,6 +74,6 @@ export async function rebuildAndProvideMMR(
 			record.newData,
 		)
 	}
-	console.log(`[Accumulator] \u{2705} Fully rebuilt the Merkle Mountain Range up to leaf index ${toIndex}`)
+	console.log(`[Client] 🎉 Fully rebuilt the Merkle Mountain Range up to leaf index ${toIndex}`)
 	await storageAdapter.persist()
 }

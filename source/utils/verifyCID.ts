@@ -24,7 +24,7 @@ export async function verifyCIDAgainstDagCborEncodedDataOrThrow(
 	const computedCID = CID.createV1(dagCbor.code, multihash)
 	const message: string =
 		errorMessage ??
-		`[Accumulator] 💥 CID/Data pair is invalid. dagCborEncodedData: ${dagCborEncodedData}, expectedCID: ${expectedCID.toString()}, computed(actual)CID: ${computedCID.toString()}`
+		`[Client] 💥 CID/Data pair is invalid. dagCborEncodedData: ${dagCborEncodedData}, expectedCID: ${expectedCID.toString()}, computed(actual)CID: ${computedCID.toString()}`
 	if (computedCID.toString() !== expectedCID.toString()) throw new Error(message)
 }
 
@@ -50,6 +50,6 @@ export async function verifyCIDAgainstRawUnencodedEncodedDataOrThrow(
 	const computedCID = CID.createV1(dagCbor.code, multihash)
 	const message: string =
 		errorMessage ??
-		`[Accumulator] 💥 CID/Data pair is invalid. rawUnencodedData: ${rawUnencodedData}, ExpectedCID: ${expectedCID.toString()}, ActualCID: ${computedCID.toString()}`
+		`[Client] 💥 CID/Data pair is invalid. rawUnencodedData: ${rawUnencodedData}, ExpectedCID: ${expectedCID.toString()}, ActualCID: ${computedCID.toString()}`
 	if (computedCID.toString() !== expectedCID.toString()) throw new Error(message)
 }

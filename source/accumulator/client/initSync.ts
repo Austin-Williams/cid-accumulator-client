@@ -18,7 +18,7 @@ export async function initSync(
 	// signature overrides for getLeafInsertLogs and getLeafInsertLogForTargetLeafIndex
 
 	// Check if Ethereum connection is working
-	console.log("[Accumulator] \u{1F440} Checking Ethereum connection...")
+	console.log("[Client] \u{1F440} Checking Ethereum connection...")
 	let lastProcessedBlock: number = 0
 	try {
 		const { meta } = await getAccumulatorData({
@@ -26,10 +26,10 @@ export async function initSync(
 			contractAddress: contractAddress,
 			getAccumulatorDataCalldataOverride: config.GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE,
 		})
-		console.log(`[Accumulator] \u{2705} Connected to Ethereum. Target contract address: ${contractAddress}`)
+		console.log(`[Client] 🔗 Connected to Ethereum. Target contract address: ${contractAddress}`)
 		lastProcessedBlock = meta.deployBlockNumber - 1
 	} catch (e) {
-		console.error("[Accumulator] \u{274C} Failed to connect to Ethereum node:", e)
+		console.error("[Client] \u{274C} Failed to connect to Ethereum node:", e)
 		throw new Error("Failed to connect to Ethereum node. See above error.")
 	}
 	// Initialize a Sync namespace object

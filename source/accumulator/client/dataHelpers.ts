@@ -1,10 +1,10 @@
 import { StorageAdapter } from "../../interfaces/StorageAdapter"
 import { isNodeJs } from "../../utils/envDetection"
 
-export async function downloadAll(storageAdapter: StorageAdapter, prefix: string): Promise<string> {
+export async function downloadAll(storageAdapter: StorageAdapter): Promise<string> {
 	// Gather all leaf data
 	const allData: Array<{ index: number; data: string }> = []
-	for await (const { key, value } of storageAdapter.iterate(prefix)) {
+	for await (const { key, value } of storageAdapter.iterate("leaf:")) {
 		const match = key.match(/^leaf:(\d+):newData$/)
 		if (match) {
 			allData.push({ index: Number(match[1]), data: value })
@@ -15,9 +15,9 @@ export async function downloadAll(storageAdapter: StorageAdapter, prefix: string
 	if (isNodeJs()) {
 		// Node.js: write to disk
 		const fs = await import("fs/promises")
-		const filePath = `leaves-${Date.now()}.json`
+		const filePath = `accumulator-data-${Date.now()}.json`
 		await fs.writeFile(filePath, json, "utf8")
-		console.log(`[Accumulator] Leaves written to ${filePath}`)
+		console.log(`[Client] Accumulator data written to ${filePath}`)
 		return filePath
 	} else {
 		// Browser: trigger download
@@ -25,7 +25,7 @@ export async function downloadAll(storageAdapter: StorageAdapter, prefix: string
 		const url = URL.createObjectURL(blob)
 		const a = document.createElement("a")
 		a.href = url
-		a.download = `leaves-${Date.now()}.json`
+		a.download = `accumulator-data-${Date.now()}.json`
 		document.body.appendChild(a)
 		a.click()
 		document.body.removeChild(a)

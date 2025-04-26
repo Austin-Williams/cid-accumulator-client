@@ -80,7 +80,7 @@ export type SyncNamespace = {
 	ethereumHttpRpcUrl: string
 	ethereumWsRpcUrl: string | undefined
 	contractAddress: string
-	highestCommittedLeafIndex: number
+	highestCommittedLeafIndex: number // highest leaf index that has been added to the local MMR
 	lastProcessedBlock: number
 	liveSyncRunning: boolean
 	liveSyncInterval: ReturnType<typeof setTimeout> | undefined
@@ -122,7 +122,7 @@ export type DataNamespace = {
 	getData: (index: number) => Promise<string | undefined>
 	getRange: (start: number, end: number) => Promise<Array<{ index: number; data: string }>>
 	subscribe: (callback: (index: number, data: string) => void) => () => void
-	downloadAll: (prefix: string) => Promise<string>
 	iterate: () => AsyncIterable<{ key: string; value: string }>
 	createIndexByPayloadSlice: (offset: number, length: number) => Promise<Map<string, string[]>>
+	downloadAll: () => Promise<string>
 }
