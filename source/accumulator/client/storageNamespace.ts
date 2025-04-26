@@ -3,7 +3,6 @@ import type { StorageNamespace, LeafRecord } from "../../types/types"
 import {
 	getLeafRecord,
 	putLeafRecordInDB,
-	getHighestContiguousLeafIndexWithData,
 	getLeafIndexesWithMissingNewData,
 	getCIDDataPairFromDB,
 	iterateTrailPairs,
@@ -22,9 +21,8 @@ export async function getStorageNamespace(storageAdapter: StorageAdapter): Promi
 		putLeafRecord: async (index: number, value: LeafRecord) => {
 			await putLeafRecordInDB(sync.storageAdapter, index, value)
 		},
-		getHighestContiguousLeafIndexWithData: () => getHighestContiguousLeafIndexWithData(sync.storageAdapter),
 		getLeafIndexesWithMissingNewData: async () => {
-			const maxLeafIndex = await getHighestContiguousLeafIndexWithData(sync.storageAdapter)
+			const maxLeafIndex = await sync.storageAdapter.getHighestContiguousLeafIndexWithData()
 			return getLeafIndexesWithMissingNewData(sync.storageAdapter, maxLeafIndex)
 		},
 		getCIDDataPairFromDB: (index: number) => getCIDDataPairFromDB(sync.storageAdapter, index),

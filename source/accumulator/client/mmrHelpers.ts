@@ -1,6 +1,6 @@
 import { StorageAdapter } from "../../interfaces/StorageAdapter"
 import { MerkleMountainRange } from "../merkleMountainRange/MerkleMountainRange"
-import { appendTrailToDB, getHighestContiguousLeafIndexWithData, getLeafRecord } from "./storageHelpers"
+import { appendTrailToDB, getLeafRecord } from "./storageHelpers"
 import { putPinProvideToIPFS } from "./ipfsHelpers"
 import { IpfsAdapter } from "../../interfaces/IpfsAdapter"
 
@@ -51,7 +51,7 @@ export async function rebuildAndProvideMMR(
 		`[Client] ⛰️ Rebuilding the Merkle Mountain Range from synced leaves${shouldPin ? " and pinning to IPFS" : ""}. (This can take a while)...`,
 	)
 	const fromIndex: number = getHighestCommittedLeafIndex() + 1
-	const toIndex: number = await getHighestContiguousLeafIndexWithData(storageAdapter)
+	const toIndex: number = await storageAdapter.getHighestContiguousLeafIndexWithData()
 	if (fromIndex > toIndex)
 		throw new Error(
 			`[Client] Expected to commit leaves from ${fromIndex} to ${toIndex}, but found no newData for leaf ${fromIndex}`,

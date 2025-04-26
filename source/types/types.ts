@@ -108,7 +108,6 @@ export type StorageNamespace = {
 	storageAdapter: StorageAdapter
 	getLeafRecord: (index: number) => Promise<LeafRecord | null>
 	putLeafRecord: (index: number, value: LeafRecord) => Promise<void>
-	getHighestContiguousLeafIndexWithData: () => Promise<number>
 	getLeafIndexesWithMissingNewData: () => Promise<number[]>
 	getCIDDataPairFromDB: (index: number) => Promise<CIDDataPair | null>
 	iterateTrailPairs: () => AsyncGenerator<CIDDataPair>

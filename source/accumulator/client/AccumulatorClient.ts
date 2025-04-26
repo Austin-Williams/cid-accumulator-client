@@ -8,7 +8,6 @@ import type {
 import { defaultConfig } from "./defaultConfig"
 import { isBrowser } from "../../utils/envDetection"
 import { rebuildAndProvideMMR } from "./mmrHelpers"
-import { getHighestContiguousLeafIndexWithData } from "./storageHelpers"
 import { MerkleMountainRange } from "../merkleMountainRange/MerkleMountainRange"
 import { startLiveSync, stopLiveSync, syncBackwardsFromLatest } from "./syncHelpers"
 import { initStorage } from "./initStorage"
@@ -49,7 +48,7 @@ export class AccumulatorClient {
 		// Ensure DB is open
 		await this.storage.storageAdapter.open()
 		// Log how many leaves are in the DB
-		const highestLeafIndexInDB = await getHighestContiguousLeafIndexWithData(this.storage.storageAdapter)
+		const highestLeafIndexInDB = await this.storage.storageAdapter.getHighestContiguousLeafIndexWithData()
 		console.log(`[Client] \u{1F4E4} Found ${highestLeafIndexInDB + 1} leafs in DB`)
 
 		// SET UP IPFS

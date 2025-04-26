@@ -2,7 +2,6 @@ import { CID } from "../../utils/CID"
 import type { NormalizedLeafInsertEvent, newLeafSubscriber, PeakWithHeight } from "../../types/types"
 import { getAccumulatorData, getLeafInsertLogs, getLatestCID } from "../../ethereum/commonCalls"
 import {
-	getHighestContiguousLeafIndexWithData,
 	getLeafIndexesWithMissingNewData,
 	putLeafRecordInDB,
 } from "./storageHelpers"
@@ -44,7 +43,7 @@ export async function syncBackwardsFromLatest(
 	const minBlock = meta.deployBlockNumber
 	setLastProcessedBlock(meta.previousInsertBlockNumber)
 
-	const highestLeafIndexInDB = await getHighestContiguousLeafIndexWithData(storageAdapter)
+	const highestLeafIndexInDB = await storageAdapter.getHighestContiguousLeafIndexWithData()
 
 	console.log(
 		`[Client] \u{1F501} Syncing backwards from block ${meta.previousInsertBlockNumber} to block ${meta.deployBlockNumber} (${meta.previousInsertBlockNumber - meta.deployBlockNumber} blocks), grabbing ${maxBlockRangePerRpcCall} blocks per RPC call.`,

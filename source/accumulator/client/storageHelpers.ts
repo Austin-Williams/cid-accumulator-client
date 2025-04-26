@@ -124,14 +124,3 @@ export async function* iterateTrailPairs(storageAdapter: StorageAdapter): AsyncG
 	}
 }
 
-// Finds the highest contiguous leaf index N such that all leaf records 0...N have newData.
-export async function getHighestContiguousLeafIndexWithData(storageAdapter: StorageAdapter): Promise<number> {
-	let i = 0
-	while (true) {
-		const record = await getLeafRecord(storageAdapter, i)
-		if (!record || !record.newData) {
-			return i - 1
-		}
-		i++
-	}
-}
