@@ -4,6 +4,27 @@
 import type { StorageAdapter } from "../../interfaces/StorageAdapter.js"
 
 export class IndexedDBAdapter implements StorageAdapter {
+	async getHighestContiguousLeafIndexWithData(): Promise<number> {
+		const indexes: number[] = []
+		for await (const { key, value } of this.iterate("leaf:")) {
+			const match = typeof key === "string" && key.match(/^leaf:(\d+):newData$/)
+			if (match) {
+				const idx = parseInt(match[1], 10)
+				if (value !== undefined && value !== null) {
+					indexes.push(idx)
+				}
+			}
+		}
+		if (indexes.length === 0) return -1
+		indexes.sort((a, b) => a - b)
+		let N = -1
+		for (let i = 0; i < indexes.length; i++) {
+			if (indexes[i] !== i) break
+			N = i
+		}
+		return N
+	}
+
 	private _instanceId: number
 	private static _nextId = 1
 	private dbName: string

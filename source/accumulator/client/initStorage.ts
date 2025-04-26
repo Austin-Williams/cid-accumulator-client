@@ -15,5 +15,5 @@ export async function initStorage(config: AccumulatorClientConfig): Promise<Stor
 		storageAdapter = new module.JSMapAdapter(config.DB_PATH ?? "./.db/accumulator.json")
 	}
 	// Initialize the Storage namespace
-	return getStorageNamespace(storageAdapter)
+	return await getStorageNamespace(storageAdapter)
 }

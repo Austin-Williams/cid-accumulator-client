@@ -12,11 +12,11 @@ import {
 /**
  * Returns a StorageNamespace object with methods bound to the given storage adapter.
  */
-export function getStorageNamespace(storageAdapter: StorageAdapter): StorageNamespace {
+export async function getStorageNamespace(storageAdapter: StorageAdapter): Promise<StorageNamespace> {
 	const sync = {
 		storageAdapter: storageAdapter,
 		getLeafRecord: async (index: number) => {
-			const result = await getLeafRecord(sync.storageAdapter, index)
+			const result = await getLeafRecord(storageAdapter, index)
 			return result === undefined ? null : result
 		},
 		putLeafRecord: async (index: number, value: LeafRecord) => {

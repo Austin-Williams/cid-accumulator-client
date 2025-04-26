@@ -6,6 +6,28 @@ import type { StorageAdapter } from "../../interfaces/StorageAdapter"
 export class MemoryAdapter implements StorageAdapter {
 	private store: Map<string, any> = new Map()
 
+	async getHighestContiguousLeafIndexWithData(): Promise<number> {
+		const indexes: number[] = []
+		for (const key of this.store.keys()) {
+			const match = key.match(/^leaf:(\d+):newData$/)
+			if (match) {
+				const idx = parseInt(match[1], 10)
+				const value = this.store.get(key)
+				if (value !== undefined && value !== null) {
+					indexes.push(idx)
+				}
+			}
+		}
+		if (indexes.length === 0) return -1
+		indexes.sort((a, b) => a - b)
+		let N = -1
+		for (let i = 0; i < indexes.length; i++) {
+			if (indexes[i] !== i) break
+			N = i
+		}
+		return N
+	}
+
 	async get(key: string): Promise<string | undefined> {
 		return this.store.get(key)
 	}

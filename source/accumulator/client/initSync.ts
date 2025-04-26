@@ -14,9 +14,6 @@ export async function initSync(
 	getAccumulatorDataCalldataOverride: string | undefined,
 	eventTopicOverride: string | undefined,
 ): Promise<SyncNamespace> {
-	// TODO: add support for signature and calldata overrides for getLatestCID, getAccumulatorData, and
-	// signature overrides for getLeafInsertLogs and getLeafInsertLogForTargetLeafIndex
-
 	// Check if Ethereum connection is working
 	console.log("[Client] \u{1F440} Checking Ethereum connection...")
 	let lastProcessedBlock: number = 0

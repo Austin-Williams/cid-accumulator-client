@@ -7,6 +7,34 @@ import { promises as fs } from "fs"
  * No external dependencies required. Suitable for moderate datasets (~100k entries).
  */
 export class JSMapAdapter implements StorageAdapter {
+	/**
+	 * Returns the highest contiguous leafIndex N such that all keys 'leaf:0:newData' ... 'leaf:N:newData' exist and are not undefined/null.
+	 * This is efficient for the in-memory Map, and does not require iterating over all possible indexes if there are gaps at the end.
+	 */
+	async getHighestContiguousLeafIndexWithData(): Promise<number> {
+		// Collect all keys that match 'leaf:{number}:newData'
+		const indexes: number[] = []
+		for (const key of this.store.keys()) {
+			const match = key.match(/^leaf:(\d+):newData$/)
+			if (match) {
+				const idx = parseInt(match[1], 10)
+				const value = this.store.get(key)
+				if (value !== undefined && value !== null) {
+					indexes.push(idx)
+				}
+			}
+		}
+		if (indexes.length === 0) return -1
+		indexes.sort((a, b) => a - b)
+		// Find the highest N such that 0..N are all present
+		let N = -1
+		for (let i = 0; i < indexes.length; i++) {
+			if (indexes[i] !== i) break
+			N = i
+		}
+		return N
+	}
+
 	private store: Map<string, string> = new Map()
 	private filePath: string
 
