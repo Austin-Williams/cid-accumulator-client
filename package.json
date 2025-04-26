@@ -3,9 +3,9 @@
 	"version": "0.0.1",
 	"description": "A universal JS/TS client for interacting with smart contracts that implement the CIDAccumulator pattern.",
 	"main": "dist/index.js",
-  "types": "dist/index.d.ts",
+	"types": "dist/index.d.ts",
 	"scripts": {
-    "prepare": "npm run build",
+		"prepare": "npm run build",
 		"build": "tsc",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
@@ -25,14 +25,15 @@
 		"url": "https://github.com/Austin-Williams/cid-accumulator-client/issues"
 	},
 	"homepage": "https://github.com/Austin-Williams/cid-accumulator-client#readme",
-  "files": [
-    "dist"
-  ],
+	"files": [
+		"dist"
+	],
 	"dependencies": {
 		"@noble/hashes": "1.7.2"
 	},
 	"devDependencies": {
 		"@types/node": "22.10.5",
+		"tsx": "^4.19.3",
 		"typescript": "^5.8.3"
 	}
 }
