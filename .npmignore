@@ -1,0 +1,2 @@
+# Exclude source maps and declaration maps from npm package
+*.map

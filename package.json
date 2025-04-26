@@ -1,0 +1,31 @@
+{
+	"name": "cid-accumulator-client",
+	"version": "0.0.1",
+	"description": "A universal JS/TS client for interacting with smart contracts that implement the CIDAccumulator pattern.",
+	"main": "dist/index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Austin-Williams/cid-accumulator-client.git"
+	},
+	"keywords": [
+		"ipfs",
+		"cid",
+		"cid-accumulator",
+		"ethereum"
+	],
+	"author": "Austin Williams",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/Austin-Williams/cid-accumulator-client/issues"
+	},
+	"homepage": "https://github.com/Austin-Williams/cid-accumulator-client#readme",
+	"dependencies": {
+		"@noble/hashes": "1.7.2"
+	},
+	"devDependencies": {
+		"@types/node": "22.10.5"
+	}
+}
