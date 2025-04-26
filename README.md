@@ -97,16 +97,17 @@ const filePath = await client.data.downloadAll()
 
 ```
 
-### Stopping Live Sync and Shutting down
+### Stopping Live Sync
 
 ```typescript
 // To stop listening for new data
 client.sync.stopLiveSync()
 ```
 
-To shut down the client gracefully (unsubscribe from websockets, close DB connection, etc.)
+### Shutting down
 
 ```typescript
+// To shut down the client gracefully (unsubscribe from websockets, close DB connection, etc.)
 await client.shutdown()
 ```
 
@@ -139,7 +140,7 @@ export const defaultConfig: AccumulatorClientConfig = {
 	IPFS_PUT_IF_POSSIBLE: true,
 
 	// If true, data will be pinned to your IPFS node to prevent garbage collection.
-	// Value is ignored if IPFS_API_URL is undefined,or if the AccumulatorClient can't reach it, or
+	// Value is ignored if IPFS_API_URL is undefined, or if the AccumulatorClient can't reach it, or
 	// if IPFS_PUT_IF_POSSIBLE is false.
 	IPFS_PIN_IF_POSSIBLE: true,
 
@@ -149,7 +150,7 @@ export const defaultConfig: AccumulatorClientConfig = {
 	IPFS_PROVIDE_IF_POSSIBLE: true,
 
 	// (Optional) Path to the local database file for persistent storage (Node.js only).
-	// If undefined, will default to './.db/accumulator.json' (relative to the current working directory).
+	// If undefined, will default to '.db/accumulator.json' (relative to the current working directory).
 	DB_PATH: undefined,
 
 	// (Advanced, optional) Override calldata for the getLatestCID() contract call.
