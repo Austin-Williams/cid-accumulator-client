@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"description": "A universal JS/TS client for interacting with smart contracts that implement the CIDAccumulator pattern.",
 	"main": "dist/index.js",
-  "types": "dist/index.d",
+  "types": "dist/index.d.ts",
 	"scripts": {
     "prepare": "npm run build",
 		"build": "tsc",
