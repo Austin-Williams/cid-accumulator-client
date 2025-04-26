@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"module": "esnext",
 		"target": "es2020",
-		"moduleResolution": "nodenext",
+		"moduleResolution": "node",
 		"esModuleInterop": true,
 		"allowSyntheticDefaultImports": true,
 		"resolveJsonModule": true,
@@ -28,5 +28,5 @@
 		"rootDir": "./source",
 		"outDir": "./dist"
 	},
-	"include": ["source/**/*.ts"]
+	"include": ["source/**/*"]
 }
