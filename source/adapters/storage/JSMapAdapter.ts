@@ -1,5 +1,4 @@
 import type { StorageAdapter } from "../../interfaces/StorageAdapter"
-import { promises as fs } from "fs"
 
 /**
  * JSMapAdapter implements StorageAdapter using a native Map,
@@ -63,6 +62,7 @@ export class JSMapAdapter implements StorageAdapter {
 	}
 
 	async open(): Promise<void> {
+		const { promises: fs } = await import("fs")
 		// Load from disk if file exists
 		try {
 			const data = await fs.readFile(this.filePath, "utf8")
@@ -74,6 +74,7 @@ export class JSMapAdapter implements StorageAdapter {
 	}
 
 	async persist(): Promise<void> {
+		const { promises: fs } = await import("fs")
 		const obj: Record<string, string> = Object.fromEntries(this.store)
 		// Ensure the directory exists before writing the file
 		const { dirname } = await import("path")
