@@ -38,12 +38,10 @@ export async function initSync(
 		config.ETHEREUM_WS_RPC_URL,
 		contractAddress,
 		lastProcessedBlock,
-		ipfs.shouldPut,
-		ipfs.shouldPin,
-		ipfs.shouldProvide,
 		getAccumulatorDataCalldataOverride,
 		config.GET_LATEST_CID_CALLDATA_OVERRIDE,
 		eventTopicOverride,
+		config.ETHEREUM_MAX_BLOCK_RANGE_PER_HTTP_RPC_CALL ?? 1000,
 	)
 	return sync
 }

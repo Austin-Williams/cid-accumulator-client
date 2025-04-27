@@ -1,17 +1,18 @@
 import { CID } from "../../utils/CID"
-import type { NormalizedLeafInsertEvent, newLeafSubscriber, PeakWithHeight } from "../../types/types"
+import type { NormalizedLeafInsertEvent, newLeafSubscriber, PeakWithHeight, LeafRecord } from "../../types/types"
 import { getAccumulatorData, getLeafInsertLogs, getLatestCID } from "../../ethereum/commonCalls"
 import {
 	getLeafIndexesWithMissingNewData,
+	getLeafRecord,
 	putLeafRecordInDB,
 } from "./storageHelpers"
 import { getAndResolveCID } from "./ipfsHelpers"
-import { commitLeaf } from "./mmrHelpers"
+import { commitLeafToMMR } from "./mmrHelpers"
 import { StorageAdapter } from "../../interfaces/StorageAdapter"
 import { walkBackLeafInsertLogsOrThrow } from "../../utils/walkBackLogsOrThrow"
 import { computePreviousRootCIDAndPeaksWithHeights, getRootCIDFromPeaks } from "../merkleMountainRange/mmrUtils"
 import { IpfsAdapter } from "../../interfaces/IpfsAdapter"
-import { getLeafRecordFromNormalizedLeafInsertEvent, uint8ArrayToHexString } from "../../utils/codec"
+import { getLeafRecordFromNormalizedLeafInsertEvent } from "../../utils/codec"
 import { MerkleMountainRange } from "../merkleMountainRange/MerkleMountainRange"
 // ================================================
 // REAL-TIME EVENT MONITORING
@@ -164,7 +165,6 @@ export async function syncBackwardsFromLatest(
  * Automatically uses polling if subscriptions are not supported or no WS URL is provided.
  */
 export async function startLiveSync(
-	ipfs: IpfsAdapter,
 	mmr: MerkleMountainRange,
 	storageAdapter: StorageAdapter,
 	contractAddress: string,
@@ -176,12 +176,8 @@ export async function startLiveSync(
 	setLiveSyncRunning: (isRUnning: boolean) => void,
 	setLiveSyncInterval: (interval: ReturnType<typeof setTimeout> | undefined) => void,
 	newLeafSubscribers: newLeafSubscriber[],
-	lastProcessedBlock: number,
+	getLastProcessedBlock: () => number,
 	setLastProcessedBlock: (blockNumber: number) => void,
-	getHighestCommittedLeafIndex: () => number,
-	setHighestCommittedLeafIndex: (index: number) => void,
-	shouldPut: boolean,
-	shouldProvide: boolean,
 	getAccumulatorDataCalldataOverride?: string,
 	getLatestCidCalldataOverride?: string,
 	eventTopicOverride?: string,
@@ -204,26 +200,22 @@ export async function startLiveSync(
 		`[Client] \u{1F440} Using ${useSubscription ? "websocket subscription" : "HTTP polling"} to monitor the chain for new data insertions.`,
 	)
 	if (useSubscription) {
-		startSubscriptionSync(
-			ipfs,
+		startSubscriptionSync({
 			mmr,
 			storageAdapter,
 			ethereumHttpRpcUrl,
 			ethereumWsRpcUrl,
 			ws,
 			setWs,
-			lastProcessedBlock,
+			getLastProcessedBlock,
 			setLastProcessedBlock,
 			newLeafSubscribers,
 			contractAddress,
-			getHighestCommittedLeafIndex,
-			setHighestCommittedLeafIndex,
-			shouldPut,
-			shouldProvide,
-		)
+			getAccumulatorDataCalldataOverride,
+			eventTopicOverride,
+		})
 	} else {
 		startPollingSync({
-			ipfs,
 			mmr,
 			storageAdapter,
 			ethereumHttpRpcUrl,
@@ -231,12 +223,8 @@ export async function startLiveSync(
 			getLiveSyncRunning,
 			setLiveSyncInterval,
 			newLeafSubscribers,
-			lastProcessedBlock,
+			getLastProcessedBlock,
 			setLastProcessedBlock,
-			getHighestCommittedLeafIndex,
-			setHighestCommittedLeafIndex,
-			shouldPut,
-			shouldProvide,
 			getAccumulatorDataCalldataOverride,
 			getLatestCidCalldataOverride,
 			eventTopicOverride,
@@ -339,7 +327,6 @@ export async function detectSubscriptionSupport(wsUrl: string): Promise<boolean>
 }
 
 export function startPollingSync(params: {
-	ipfs: IpfsAdapter
 	mmr: MerkleMountainRange
 	storageAdapter: StorageAdapter
 	ethereumHttpRpcUrl: string
@@ -347,19 +334,14 @@ export function startPollingSync(params: {
 	getLiveSyncRunning: () => boolean
 	setLiveSyncInterval: (interval: ReturnType<typeof setTimeout> | undefined) => void
 	newLeafSubscribers: newLeafSubscriber[]
-	lastProcessedBlock: number
+	getLastProcessedBlock: () => number
 	setLastProcessedBlock: (blockNumber: number) => void
-	getHighestCommittedLeafIndex: () => number
-	setHighestCommittedLeafIndex: (index: number) => void
-	shouldPut: boolean
-	shouldProvide: boolean
 	getAccumulatorDataCalldataOverride?: string
 	getLatestCidCalldataOverride?: string
 	eventTopicOverride?: string
 	pollIntervalMs?: number
 }) {
 	const {
-		ipfs,
 		mmr,
 		storageAdapter,
 		ethereumHttpRpcUrl,
@@ -367,12 +349,8 @@ export function startPollingSync(params: {
 		getLiveSyncRunning,
 		setLiveSyncInterval,
 		newLeafSubscribers,
-		lastProcessedBlock,
+		getLastProcessedBlock,
 		setLastProcessedBlock,
-		getHighestCommittedLeafIndex,
-		setHighestCommittedLeafIndex,
-		shouldPut,
-		shouldProvide,
 		getAccumulatorDataCalldataOverride,
 		getLatestCidCalldataOverride,
 		eventTopicOverride,
@@ -386,33 +364,28 @@ export function startPollingSync(params: {
 				getAccumulatorDataCalldataOverride,
 			})
 			const { meta } = result
-			const latestBlock = meta.previousInsertBlockNumber
-			if (latestBlock > lastProcessedBlock) {
+			const youngestBlockToCheck = meta.previousInsertBlockNumber
+			if (youngestBlockToCheck > getLastProcessedBlock()) {
 				const newEvents = await getLeafInsertLogs({
-					ethereumHttpRpcUrl,
-					contractAddress,
-					fromBlock: lastProcessedBlock + 1,
-					toBlock: latestBlock,
-					eventTopicOverride,
-				})
+          ethereumHttpRpcUrl,
+          contractAddress,
+          fromBlock: getLastProcessedBlock() + 1,
+          toBlock: youngestBlockToCheck,
+          eventTopicOverride,
+        })
 				for (const event of newEvents) {
 					await processNewLeafEvent(
-						ipfs,
 						mmr,
 						storageAdapter,
 						ethereumHttpRpcUrl,
 						contractAddress,
-						getHighestCommittedLeafIndex,
-						setHighestCommittedLeafIndex,
-						shouldPut,
-						shouldProvide,
 						event,
 						newLeafSubscribers,
 						getAccumulatorDataCalldataOverride,
 						getLatestCidCalldataOverride,
 					)
 				}
-				setLastProcessedBlock(latestBlock)
+				setLastProcessedBlock(youngestBlockToCheck)
 			}
 		} catch (err) {
 			console.error("[LiveSync] Error during polling:", err)
@@ -424,25 +397,21 @@ export function startPollingSync(params: {
 	poll()
 }
 
-export function startSubscriptionSync(
-	ipfs: IpfsAdapter,
+export function startSubscriptionSync( params: {
 	mmr: MerkleMountainRange,
 	storageAdapter: StorageAdapter,
 	ethereumHttpRpcUrl: string,
 	ethereumWsRpcUrl: string | undefined,
 	ws: WebSocket | undefined,
 	setWs: (ws: WebSocket | undefined) => void,
-	lastProcessedBlock: number,
+	getLastProcessedBlock: () => number,
 	setLastProcessedBlock: (block: number) => void,
 	newLeafSubscribers: newLeafSubscriber[],
 	contractAddress: string,
-	getHighestCommittedLeafIndex: () => number,
-	setHighestCommittedLeafIndex: (index: number) => void,
-	shouldPut: boolean,
-	shouldProvide: boolean,
 	getAccumulatorDataCalldataOverride?: string,
 	eventTopicOverride?: string,
-): void {
+}): void {
+	const { ethereumHttpRpcUrl,ethereumWsRpcUrl, ws, setWs, getLastProcessedBlock, setLastProcessedBlock, contractAddress, getAccumulatorDataCalldataOverride, eventTopicOverride } = params
 	if (!ethereumWsRpcUrl) {
 		console.error("[Client] No ETHEREUM_WS_RPC_URL set. Cannot start subscription sync.")
 		return
@@ -486,28 +455,24 @@ export function startSubscriptionSync(
 						contractAddress,
 						getAccumulatorDataCalldataOverride,
 					})
+					const currentLastProcessedBlock = getLastProcessedBlock()
 					const latestBlock = meta.previousInsertBlockNumber
-					if (latestBlock > lastProcessedBlock) {
+					if (latestBlock > currentLastProcessedBlock) {
 						const newEvents = await getLeafInsertLogs({
 							ethereumHttpRpcUrl,
 							contractAddress,
-							fromBlock: lastProcessedBlock + 1,
+							fromBlock: currentLastProcessedBlock + 1,
 							toBlock: latestBlock,
 							eventTopicOverride,
 						})
 						for (const event of newEvents) {
 							await processNewLeafEvent(
-								ipfs,
-								mmr,
-								storageAdapter,
-								ethereumHttpRpcUrl,
-								contractAddress,
-								getHighestCommittedLeafIndex,
-								setHighestCommittedLeafIndex,
-								shouldPut,
-								shouldProvide,
+								params.mmr,
+								params.storageAdapter,
+								params.ethereumHttpRpcUrl,
+								params.contractAddress,
 								event,
-								newLeafSubscribers,
+								params.newLeafSubscribers,
 							)
 						}
 						setLastProcessedBlock(latestBlock)
@@ -525,83 +490,40 @@ export function startSubscriptionSync(
 	}
 	newWs.onclose = () => {
 		console.log("[Client] WebSocket closed.")
-		setWs(undefined)
+		params.setWs(undefined)
 	}
 }
-
-// Processes a new leaf event and commits it to the MMR.
+// Sends a new leaf event to the DB and (if applicable) to the MMR), backfilling if necessary.
 export async function processNewLeafEvent(
-	ipfs: IpfsAdapter,
 	mmr: MerkleMountainRange,
 	storageAdapter: StorageAdapter,
 	ethereumHttpRpcUrl: string,
 	contractAddress: string,
-	getHighestCommittedLeafIndex: () => number,
-	setHighestCommittedLeafIndex: (index: number) => void,
-	shouldPut: boolean,
-	shouldProvide: boolean,
 	event: NormalizedLeafInsertEvent,
 	newLeafSubscribers: newLeafSubscriber[],
 	getAccumulatorDataCalldataOverride?: string,
 	getLatestCidCalldataOverride?: string,
 	eventTopicOverride?: string,
 ): Promise<void> {
-	// return if we have already processed this leaf
-	if (event.leafIndex <= getHighestCommittedLeafIndex()) return
-
-	// if event.leafIndex > highestCommittedLeafIndex + 1:
-	if (event.leafIndex > getHighestCommittedLeafIndex() + 1) {
-		console.log(
-			`[Client] \u{1F4CC} Missing event for leaf indexes ${getHighestCommittedLeafIndex() + 1} to ${event.leafIndex - 1}. Getting them now...`,
-		)
-		// Walk back through the previousInsertBlockNumber's to get the missing leaves
-		const pastEvents: NormalizedLeafInsertEvent[] = await walkBackLeafInsertLogsOrThrow(
-			ethereumHttpRpcUrl,
-			contractAddress,
-			event.leafIndex - 1,
-			event.previousInsertBlockNumber,
-			getHighestCommittedLeafIndex() + 1,
-			eventTopicOverride,
-		)
-		for (let i = 0; i < pastEvents.length; i++) {
-			await processNewLeafEvent(
-				ipfs,
-				mmr,
-				storageAdapter,
-				ethereumHttpRpcUrl,
-				contractAddress,
-				getHighestCommittedLeafIndex,
-				setHighestCommittedLeafIndex,
-				shouldPut,
-				shouldProvide,
-				pastEvents[i],
-				newLeafSubscribers,
-				getAccumulatorDataCalldataOverride,
-				getLatestCidCalldataOverride,
-				eventTopicOverride,
-			)
-		}
-		console.log(`[Client] \u{1F44D} Got the missing events.`)
-	}
-
-	// Store the event in the DB
-	await putLeafRecordInDB(storageAdapter, event.leafIndex, getLeafRecordFromNormalizedLeafInsertEvent(event))
-
-	// Commit the leaf to the MMR
-	await commitLeaf(
-		ipfs,
+	// handle DB
+	await processNewLeafEventForDB(
+		storageAdapter,
+		ethereumHttpRpcUrl,
+		contractAddress,
+		event,
+		newLeafSubscribers,
+		eventTopicOverride,
+	)
+	// handle MMR
+	await processNewLeafEventForMMR(
 		mmr,
 		storageAdapter,
-		shouldPut,
-		shouldProvide,
-		getHighestCommittedLeafIndex,
-		setHighestCommittedLeafIndex,
 		event.leafIndex,
 		event.newData,
 	)
-
-	for (const callback of newLeafSubscribers) callback(event.leafIndex, uint8ArrayToHexString(event.newData))
-
+	// Handle subscribers
+	for (const callback of newLeafSubscribers) callback(event.leafIndex, Buffer.from(event.newData).toString('hex'))
+	// SANITY CHECK
 	// === THE FOLLOWING CODE BLOCK CAN BE REMOVED. IT IS JUST A SANITY CHECK. ===
 	const { meta } = await getAccumulatorData({
 		ethereumHttpRpcUrl,
@@ -609,7 +531,7 @@ export async function processNewLeafEvent(
 		getAccumulatorDataCalldataOverride,
 	})
 	// This sanity check only makes sense when the node is fully synced
-	if (getHighestCommittedLeafIndex() === meta.leafCount - 1) {
+	if (mmr.leafCount - 1 === meta.leafCount - 1) {
 		try {
 			const localRootCid = await mmr.rootCIDAsBase32()
 			const onChainRootCid = await getLatestCID({
@@ -631,6 +553,94 @@ export async function processNewLeafEvent(
 	// =============================== END SANITY CHECK. ===============================
 
 	console.log(`[Client] \u{1F343} Processed new leaf with index ${event.leafIndex}`)
+}
+
+
+// Adds a new leaf to the DB (backfilling if necessary)
+async function processNewLeafEventForDB(
+	storageAdapter: StorageAdapter,
+	ethereumHttpRpcUrl: string,
+	contractAddress: string,
+	event: NormalizedLeafInsertEvent,
+	newLeafSubscribers: newLeafSubscriber[],
+	eventTopicOverride?: string,
+): Promise<void> {
+	const highestContiguousLeafIndex = await storageAdapter.getHighestContiguousLeafIndexWithData()
+
+	// return if we have already have this leaf data in the DB
+	if (event.leafIndex <= highestContiguousLeafIndex) return
+	if (event.leafIndex > highestContiguousLeafIndex + 1) {
+		console.log(
+			`[Client] \u{1F4CC} Missing event for leaf indexes ${highestContiguousLeafIndex + 1} to ${event.leafIndex - 1}. Getting them now...`,
+		)
+		// Walk back through the previousInsertBlockNumber's to get the missing leaves
+		const pastEvents: NormalizedLeafInsertEvent[] = await walkBackLeafInsertLogsOrThrow(
+			ethereumHttpRpcUrl,
+			contractAddress,
+			event.leafIndex - 1,
+			event.previousInsertBlockNumber,
+			highestContiguousLeafIndex + 1,
+			eventTopicOverride,
+		)
+		// Process the missing events
+		for (let i = 0; i < pastEvents.length; i++) {
+			await processNewLeafEventForDB(
+				storageAdapter,
+				ethereumHttpRpcUrl,
+				contractAddress,
+				pastEvents[i],
+				newLeafSubscribers,
+				eventTopicOverride
+			)
+		}
+		console.log(`[Client] \u{1F44D} Got the missing events.`)
+	}
+
+	// Store the event in the DB
+	await putLeafRecordInDB(storageAdapter, event.leafIndex, getLeafRecordFromNormalizedLeafInsertEvent(event))
+}
+
+export async function processNewLeafEventForMMR(
+	mmr: MerkleMountainRange,
+	storageAdapter: StorageAdapter,
+	leafIndex: number,
+	newData: Uint8Array,
+): Promise<void> {
+	const highestCommittedLeafIndex = mmr.leafCount - 1
+	// return if we have already have this leaf data in the MMR
+	if (leafIndex <= highestCommittedLeafIndex) return
+	if (leafIndex > highestCommittedLeafIndex + 1) {
+		console.log(`[Client] \u{1F4CC} Lower indexed leaves ${highestCommittedLeafIndex + 1} to ${leafIndex - 1} have yet to be processed by the MMR. Processing them now...`)
+		// Walk back through the previousInsertBlockNumber's to get the missing leaves
+		// Get {leafIndex: number, newData: Uint8Array}[] for leafIndex from (highestCommittedLeafIndex + 1) to (leafIndex - 1)
+		const missingLeaves: { leafIndex: number; newData: Uint8Array }[] = [];
+		for (let i = highestCommittedLeafIndex + 1; i < leafIndex; i++) {
+			const record : LeafRecord | undefined = await getLeafRecord(storageAdapter, i)
+			if (record === undefined) throw new Error(`Missing leaf data for leaf index ${i}`)
+			missingLeaves.push({ leafIndex: i, newData: record.newData })
+		}
+		for (let i = 0; i < missingLeaves.length; i++) {
+			await processNewLeafEventForMMR(
+				mmr,
+				storageAdapter,
+				missingLeaves[i].leafIndex,
+				missingLeaves[i].newData,
+			)
+		}
+		console.log(`[Client] \u{1F44D} Processed the missing events in the MMR.`)
+	}
+
+	// Commit the leaf to the MMR
+	await commitLeafToMMR(
+		storageAdapter,
+		mmr,
+		leafIndex,
+		newData,
+	)
+	// TODO: IMPORTANT!MMR should have a callback feature where every time a leaf gets added to it, the trails gets returned to 
+	// subscribers. And the IPFS putPinProvide should be registered as a provider
+	// for (const callback of newMMRCommittedLeafSubscribers) callback(leafIndex, uint8ArrayToHexString(newData))
+	console.log(`[Client] \u{1F343} Added new leaf with index ${leafIndex} to the MMR.`)
 }
 
 export function onNewLeaf(newLeafSubscribers: newLeafSubscriber[], callback: (index: number, data: string) => void): () => void {

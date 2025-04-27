@@ -20,12 +20,10 @@ export function getSyncNamespace(
 	ethereumWsRpcUrl: string | undefined,
 	contractAddress: string,
 	lastProcessedBlock: number,
-	shouldPut: boolean,
-	shouldPin: boolean,
-	shouldProvide: boolean,
 	getAccumulatorDataCalldataOverride: string | undefined,
 	getLatestCidCalldataOverride: string | undefined,
 	eventTopicOverride: string | undefined,
+	maxBlockRangePerRpcCall: number,
 ): SyncNamespace {
 	let sync: SyncNamespace = {
 		ethereumHttpRpcUrl,
@@ -39,32 +37,22 @@ export function getSyncNamespace(
 		newLeafSubscribers: [],
 		onNewLeaf: (callback: (index: number, data: string) => void) => onNewLeaf(sync.newLeafSubscribers, callback),
 		startSubscriptionSync: () =>
-			startSubscriptionSync(
-				ipfs,
+			startSubscriptionSync({
 				mmr,
 				storageAdapter,
 				ethereumHttpRpcUrl,
 				ethereumWsRpcUrl,
-				sync.websocket,
-				(newWs) => {
-					sync.websocket = newWs
-				},
-				lastProcessedBlock,
-				(b) => {
-					lastProcessedBlock = b
-				},
-				sync.newLeafSubscribers,
+				ws: sync.websocket,
+				setWs: (ws) => { sync.websocket = ws },
+				getLastProcessedBlock: () => sync.lastProcessedBlock,
+				setLastProcessedBlock: (b) => { sync.lastProcessedBlock = b },
+				newLeafSubscribers: sync.newLeafSubscribers,
 				contractAddress,
-				() => sync.highestCommittedLeafIndex,
-				(i) => {
-					sync.highestCommittedLeafIndex = i
-				},
-				shouldPut,
-				shouldProvide,
-			),
+				getAccumulatorDataCalldataOverride,
+				eventTopicOverride,
+			}),
 		startPollingSync: () =>
 			startPollingSync({
-				ipfs,
 				mmr,
 				storageAdapter,
 				ethereumHttpRpcUrl,
@@ -74,22 +62,15 @@ export function getSyncNamespace(
 					sync.liveSyncInterval = interval
 				},
 				newLeafSubscribers: sync.newLeafSubscribers,
-				lastProcessedBlock,
+				getLastProcessedBlock: () => sync.lastProcessedBlock,
 				setLastProcessedBlock: (b) => {
-					lastProcessedBlock = b
+					sync.lastProcessedBlock = b
 				},
-				getHighestCommittedLeafIndex: () => sync.highestCommittedLeafIndex,
-				setHighestCommittedLeafIndex: (i) => {
-					sync.highestCommittedLeafIndex = i
-				},
-				shouldPut,
-				shouldProvide,
 				getAccumulatorDataCalldataOverride,
 				eventTopicOverride,
 			}),
 		startLiveSync: () =>
 			startLiveSync(
-				ipfs,
 				mmr,
 				storageAdapter,
 				contractAddress,
@@ -107,16 +88,10 @@ export function getSyncNamespace(
 					sync.liveSyncInterval = interval
 				},
 				sync.newLeafSubscribers,
-				lastProcessedBlock,
+				() => sync.lastProcessedBlock,
 				(b) => {
-					lastProcessedBlock = b
+					sync.lastProcessedBlock = b
 				},
-				() => sync.highestCommittedLeafIndex,
-				(i) => {
-					sync.highestCommittedLeafIndex = i
-				},
-				shouldPin,
-				shouldProvide,
 				getAccumulatorDataCalldataOverride,
 				getLatestCidCalldataOverride,
 				eventTopicOverride,
@@ -136,9 +111,18 @@ export function getSyncNamespace(
 				},
 			),
 		syncBackwardsFromLatest: () =>
-			syncBackwardsFromLatest(ipfs, storageAdapter, ethereumHttpRpcUrl, contractAddress, (b) => {
-				lastProcessedBlock = b
-			}),
+			syncBackwardsFromLatest(
+				ipfs,
+				storageAdapter,
+				ethereumHttpRpcUrl,
+				contractAddress,
+				(b) => {
+					sync.lastProcessedBlock = b
+				},
+				getAccumulatorDataCalldataOverride,
+				eventTopicOverride,
+				maxBlockRangePerRpcCall,
+			),
 	}
 	return sync
 }

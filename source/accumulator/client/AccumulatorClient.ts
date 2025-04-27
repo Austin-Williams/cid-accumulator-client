@@ -7,7 +7,7 @@ import type {
 } from "../../types/types"
 import { defaultConfig } from "./defaultConfig"
 import { isBrowser } from "../../utils/envDetection"
-import { rebuildAndProvideMMR } from "./mmrHelpers"
+import { rebuildMMR } from "./mmrHelpers"
 import { MerkleMountainRange } from "../merkleMountainRange/MerkleMountainRange"
 import { startLiveSync, stopLiveSync, syncBackwardsFromLatest } from "./syncHelpers"
 import { initStorage } from "./initStorage"
@@ -77,8 +77,7 @@ export class AccumulatorClient {
 		console.log("[Client] 🚀 Starting AccumulatorClient...")
 		await this.init()
 
-		if (!this.ipfs || !this.sync || !this.storage)
-			throw new Error("Not all namespaces present. This should never happen.")
+		if (!this.ipfs || !this.sync || !this.storage) throw new Error("Not all namespaces present. This should never happen.")
 
 		await syncBackwardsFromLatest(
 			this.ipfs.ipfsAdapter,
@@ -91,21 +90,12 @@ export class AccumulatorClient {
 			this.config.ETHEREUM_MAX_BLOCK_RANGE_PER_HTTP_RPC_CALL ?? 1000,
 		)
 
-		await rebuildAndProvideMMR(
-			this.ipfs.ipfsAdapter,
-			this.mmr,
-			this.storage.storageAdapter,
-			this.ipfs.shouldPin,
-			this.ipfs.shouldProvide,
-			() => this.sync!.highestCommittedLeafIndex,
-			(block: number) => (this.sync!.highestCommittedLeafIndex = block),
-		)
+		await rebuildMMR(this.mmr, this.storage.storageAdapter)
 		
 		this.ipfs.rePinAllDataToIPFS() // Fire-and-forget, no-ops if this.ipfs.shouldPin is false
 
 		startLiveSync(
 			// Fire-and-forget
-			this.ipfs.ipfsAdapter,
 			this.mmr,
 			this.storage.storageAdapter,
 			this.sync.contractAddress,
@@ -117,12 +107,8 @@ export class AccumulatorClient {
 			(isRunning: boolean) => (this.sync!.liveSyncRunning = isRunning),
 			(interval: ReturnType<typeof setTimeout> | undefined) => (this.sync!.liveSyncInterval = interval),
 			this.sync.newLeafSubscribers,
-			this.sync.lastProcessedBlock,
+			() => this.sync!.lastProcessedBlock,
 			(block: number) => (this.sync!.lastProcessedBlock = block),
-			() => this.sync!.highestCommittedLeafIndex,
-			(leafIndex: number) => (this.sync!.highestCommittedLeafIndex = leafIndex),
-			this.ipfs.shouldPin,
-			this.ipfs.shouldProvide,
 			this.config.GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE,
 			this.config.GET_LATEST_CID_CALLDATA_OVERRIDE,
 			this.config.LEAF_INSERT_EVENT_SIGNATURE_OVERRIDE,

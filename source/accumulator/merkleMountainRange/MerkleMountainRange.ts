@@ -9,6 +9,11 @@ export class MerkleMountainRange {
 
 	constructor() {}
 
+	// TODO: IMPORTANT!MMR should have a callback feature where every time a leaf gets added to it, the trails gets returned to 
+	// subscribers. And the IPFS putPinProvide should be registered as a provider
+	// for (const callback of newMMRCommittedLeafSubscribers) callback(leafIndex, uint8ArrayToHexString(newData))
+	
+
 	/**
 	 * Adds a new leaf to the MMR and computes all intermediate nodes.
 	 * @param newData - The raw data for the new leaf node to be added.
