@@ -7,7 +7,6 @@ import type {
 	SyncNamespace,
 } from "../../types/types"
 import { defaultConfig } from "./defaultConfig"
-import { isBrowser } from "../../utils/envDetection"
 import { rebuildMMR } from "./mmrHelpers"
 import { MerkleMountainRange } from "../merkleMountainRange/MerkleMountainRange"
 import { stopLiveSync, syncBackwardsFromLatest } from "./syncHelpers"

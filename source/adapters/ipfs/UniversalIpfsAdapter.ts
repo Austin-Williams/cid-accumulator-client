@@ -22,7 +22,8 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 		wantsToPin: boolean,
 		wantsToProvide: boolean,
 	) {
-		this.gatewayUrl = gatewayUrl.replace(/\/$/, "") // Remove trailing slash
+		// Remove trailing '/ipfs' or '/ipfs/' and any trailing slash from the gateway URL
+		this.gatewayUrl = gatewayUrl.replace(/\/?ipfs\/?$/, "").replace(/\/$/, "")
 		this.apiUrl = apiUrl?.replace(/\/$/, "") // Remove trailing slash
 		this.shouldPut = wantsToPut && apiUrl !== undefined
 		this.shouldPin = wantsToPin && apiUrl !== undefined
