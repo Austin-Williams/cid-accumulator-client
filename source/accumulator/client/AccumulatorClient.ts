@@ -68,7 +68,7 @@ export class AccumulatorClient {
 		// SET UP DATA (friendly "front-end" to storage)
 		this.data = getDataNamespace(
 			this.storage.storageAdapter,
-			() => this.sync!.highestCommittedLeafIndex,
+			() => this.mmr.leafCount - 1,
 			(this.sync!.onNewLeaf).bind(this.sync!)
 		)
 	}

@@ -12,7 +12,7 @@ import { StorageAdapter } from "../../interfaces/StorageAdapter"
 import { walkBackLeafInsertLogsOrThrow } from "../../utils/walkBackLogsOrThrow"
 import { computePreviousRootCIDAndPeaksWithHeights, getRootCIDFromPeaks } from "../merkleMountainRange/mmrUtils"
 import { IpfsAdapter } from "../../interfaces/IpfsAdapter"
-import { getLeafRecordFromNormalizedLeafInsertEvent } from "../../utils/codec"
+import { getLeafRecordFromNormalizedLeafInsertEvent, uint8ArrayToHexString } from "../../utils/codec"
 import { MerkleMountainRange } from "../merkleMountainRange/MerkleMountainRange"
 // ================================================
 // REAL-TIME EVENT MONITORING
@@ -374,7 +374,7 @@ export function startPollingSync(params: {
           eventTopicOverride,
         })
 				for (const event of newEvents) {
-					await processNewLeafEvent(
+					await processNewLeafEvent({
 						mmr,
 						storageAdapter,
 						ethereumHttpRpcUrl,
@@ -383,7 +383,8 @@ export function startPollingSync(params: {
 						newLeafSubscribers,
 						getAccumulatorDataCalldataOverride,
 						getLatestCidCalldataOverride,
-					)
+						eventTopicOverride,
+					})
 				}
 				setLastProcessedBlock(youngestBlockToCheck)
 			}
@@ -411,7 +412,7 @@ export function startSubscriptionSync( params: {
 	getAccumulatorDataCalldataOverride?: string,
 	eventTopicOverride?: string,
 }): void {
-	const { ethereumHttpRpcUrl,ethereumWsRpcUrl, ws, setWs, getLastProcessedBlock, setLastProcessedBlock, contractAddress, getAccumulatorDataCalldataOverride, eventTopicOverride } = params
+	const { mmr, storageAdapter, ethereumHttpRpcUrl, ethereumWsRpcUrl, ws, setWs, getLastProcessedBlock, setLastProcessedBlock, newLeafSubscribers, contractAddress, getAccumulatorDataCalldataOverride, eventTopicOverride } = params
 	if (!ethereumWsRpcUrl) {
 		console.error("[Client] No ETHEREUM_WS_RPC_URL set. Cannot start subscription sync.")
 		return
@@ -466,14 +467,16 @@ export function startSubscriptionSync( params: {
 							eventTopicOverride,
 						})
 						for (const event of newEvents) {
-							await processNewLeafEvent(
-								params.mmr,
-								params.storageAdapter,
-								params.ethereumHttpRpcUrl,
-								params.contractAddress,
+							await processNewLeafEvent({
+								mmr,
+								storageAdapter,
+								ethereumHttpRpcUrl,
+								contractAddress,
 								event,
-								params.newLeafSubscribers,
-							)
+								newLeafSubscribers,
+								getAccumulatorDataCalldataOverride,
+								eventTopicOverride,
+							})
 						}
 						setLastProcessedBlock(latestBlock)
 					}
@@ -494,7 +497,7 @@ export function startSubscriptionSync( params: {
 	}
 }
 // Sends a new leaf event to the DB and (if applicable) to the MMR), backfilling if necessary.
-export async function processNewLeafEvent(
+export async function processNewLeafEvent( params: {
 	mmr: MerkleMountainRange,
 	storageAdapter: StorageAdapter,
 	ethereumHttpRpcUrl: string,
@@ -504,7 +507,8 @@ export async function processNewLeafEvent(
 	getAccumulatorDataCalldataOverride?: string,
 	getLatestCidCalldataOverride?: string,
 	eventTopicOverride?: string,
-): Promise<void> {
+}): Promise<void> {
+	const { mmr, storageAdapter, ethereumHttpRpcUrl, contractAddress, event, newLeafSubscribers, getAccumulatorDataCalldataOverride, getLatestCidCalldataOverride, eventTopicOverride } = params
 	// handle DB
 	await processNewLeafEventForDB(
 		storageAdapter,
@@ -522,7 +526,7 @@ export async function processNewLeafEvent(
 		event.newData,
 	)
 	// Handle subscribers
-	for (const callback of newLeafSubscribers) callback(event.leafIndex, Buffer.from(event.newData).toString('hex'))
+	for (const callback of newLeafSubscribers) callback(event.leafIndex, uint8ArrayToHexString(event.newData))
 	// SANITY CHECK
 	// === THE FOLLOWING CODE BLOCK CAN BE REMOVED. IT IS JUST A SANITY CHECK. ===
 	const { meta } = await getAccumulatorData({
