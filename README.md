@@ -57,7 +57,7 @@ You'll see verbose logs in the console showing syncing progress.
 [Client] 🙌 Successfully resolved all remaining data from IPFS!
 [Client] 🌲 Your accumulator client has acquired all data!
 [Client] ⛰️ Rebuilding the Merkle Mountain Range from synced leaves and pinning to IPFS. (This can take a while)...
-[Client] 🎉 Fully rebuilt the Merkle Mountain Range up to leaf index 217
+[Client] 🎉 Finished rebuilding the Merkle Mountain Range.
 [Client] 👎 No ETHEREUM_WS_RPC_URL provided, will use polling.
 [Client] 👀 Using HTTP polling to monitor the chain for new data insertions.
 [Client] 🟢 Client is ready to use.

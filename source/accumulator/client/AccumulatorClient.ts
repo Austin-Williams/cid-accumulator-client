@@ -2,6 +2,7 @@ import type {
 	AccumulatorClientConfig,
 	DataNamespace,
 	IpfsNamespace,
+	MMRLeafInsertTrail,
 	StorageNamespace,
 	SyncNamespace,
 } from "../../types/types"
@@ -9,7 +10,7 @@ import { defaultConfig } from "./defaultConfig"
 import { isBrowser } from "../../utils/envDetection"
 import { rebuildMMR } from "./mmrHelpers"
 import { MerkleMountainRange } from "../merkleMountainRange/MerkleMountainRange"
-import { startLiveSync, stopLiveSync, syncBackwardsFromLatest } from "./syncHelpers"
+import { stopLiveSync, syncBackwardsFromLatest } from "./syncHelpers"
 import { initStorage } from "./initStorage"
 import { initIpfs } from "./initIpfs"
 import { initSync } from "./initSync"
@@ -37,7 +38,7 @@ export class AccumulatorClient {
 	}
 
 	async init(): Promise<void> {
-		// Expose client in browser (to give user control)
+		// Expose client in browser to give user control
 		if (isBrowser()) {
 			// @ts-ignore
 			window.accumulatorClient = this
@@ -52,7 +53,17 @@ export class AccumulatorClient {
 		console.log(`[Client] \u{1F4E4} Found ${highestLeafIndexInDB + 1} leafs in DB`)
 
 		// SET UP IPFS
-		this.ipfs = await initIpfs(this.config, this.storage.storageAdapter)
+		this.ipfs = await initIpfs(this.config, this.storage!.storageAdapter)
+		// If IPFS is set up to pin, subscribe to MMR leaf inserts and pin all relevant CIDs
+		if (this.ipfs.shouldPin) {
+			this.mmr.subscribeToLeafInsertTrail(
+				(trail: MMRLeafInsertTrail) => {
+					for (const {cid, dagCborEncodedData} of trail) {
+						this.ipfs?.putPinProvideToIPFS({cid, dagCborEncodedData})
+					}
+				}
+			)
+		}
 
 		// SET UP SYNC
 		this.sync = await initSync(
@@ -90,29 +101,30 @@ export class AccumulatorClient {
 			this.config.ETHEREUM_MAX_BLOCK_RANGE_PER_HTTP_RPC_CALL ?? 1000,
 		)
 
-		await rebuildMMR(this.mmr, this.storage.storageAdapter)
+		rebuildMMR(this.mmr, this.storage.storageAdapter) // Fire-and-forget
 		
-		this.ipfs.rePinAllDataToIPFS() // Fire-and-forget, no-ops if this.ipfs.shouldPin is false
+		//this.ipfs.rePinAllDataToIPFS() // Fire-and-forget, no-ops if this.ipfs.shouldPin is false
 
-		startLiveSync(
-			// Fire-and-forget
-			this.mmr,
-			this.storage.storageAdapter,
-			this.sync.contractAddress,
-			this.sync.ethereumHttpRpcUrl,
-			this.sync.ethereumWsRpcUrl,
-			this.sync.websocket,
-			(newWs: WebSocket | undefined) => (this.sync!.websocket = newWs),
-			() => this.sync!.liveSyncRunning,
-			(isRunning: boolean) => (this.sync!.liveSyncRunning = isRunning),
-			(interval: ReturnType<typeof setTimeout> | undefined) => (this.sync!.liveSyncInterval = interval),
-			this.sync.newLeafSubscribers,
-			() => this.sync!.lastProcessedBlock,
-			(block: number) => (this.sync!.lastProcessedBlock = block),
-			this.config.GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE,
-			this.config.GET_LATEST_CID_CALLDATA_OVERRIDE,
-			this.config.LEAF_INSERT_EVENT_SIGNATURE_OVERRIDE,
-		)
+		this.sync.startLiveSync()
+		//startLiveSync(
+		//	// Fire-and-forget
+		//	this.mmr,
+		//	this.storage.storageAdapter,
+		//	this.sync.contractAddress,
+		//	this.sync.ethereumHttpRpcUrl,
+		//	this.sync.ethereumWsRpcUrl,
+		//	this.sync.websocket,
+		//	(newWs: WebSocket | undefined) => (this.sync!.websocket = newWs),
+		//	() => this.sync!.liveSyncRunning,
+		//	(isRunning: boolean) => (this.sync!.liveSyncRunning = isRunning),
+		//	(interval: ReturnType<typeof setTimeout> | undefined) => (this.sync!.liveSyncInterval = interval),
+		//	this.sync.newLeafEventSubscribers,
+		//	() => this.sync!.lastProcessedBlock,
+		//	(block: number) => (this.sync!.lastProcessedBlock = block),
+		//	this.config.GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE,
+		//	this.config.GET_LATEST_CID_CALLDATA_OVERRIDE,
+		//	this.config.LEAF_INSERT_EVENT_SIGNATURE_OVERRIDE,
+		//)
 		console.log("[Client] 🟢 Client is ready to use.")
 	}
 

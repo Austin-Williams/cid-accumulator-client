@@ -110,7 +110,12 @@ export async function putPinProvideToIPFS(
 	cid: CID<unknown, 113, 18, 1>,
 	dagCborEncodedData: DagCborEncodedData,
 ): Promise<boolean> {
-	await verifyCIDAgainstDagCborEncodedDataOrThrow(dagCborEncodedData, cid)
+	try {
+		await verifyCIDAgainstDagCborEncodedDataOrThrow(dagCborEncodedData, cid)
+	} catch (err) {
+		console.error('[putPinProvideToIPFS] 💥 CID verification failed:', err, { cid, dagCborEncodedData });
+		return false;
+	}
 	if (shouldPut) {
 		try {
 			await ipfs.putBlock(cid, dagCborEncodedData)

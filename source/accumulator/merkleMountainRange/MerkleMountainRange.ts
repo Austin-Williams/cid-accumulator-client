@@ -1,19 +1,28 @@
+import type { MMRLeafInsertTrail } from "../../types/types"
 import { CID } from "../../utils/CID"
 import { encodeBlock } from "../../utils/codec"
-import { MMRLeafInsertTrail } from "../../types/types"
 import { NULL_CID } from "../../utils/constants"
 
 export class MerkleMountainRange {
-	public peaks: CID<unknown, 113, 18, 1>[] = []
-	public leafCount = 0
+	public peaks: CID<unknown, 113, 18, 1>[] = [];
+	public leafCount = 0;
+	private leafInsertTrailSubscribers: ((trail: MMRLeafInsertTrail) => void)[] = []
 
 	constructor() {}
 
-	// TODO: IMPORTANT!MMR should have a callback feature where every time a leaf gets added to it, the trails gets returned to 
-	// subscribers. And the IPFS putPinProvide should be registered as a provider
-	// for (const callback of newMMRCommittedLeafSubscribers) callback(leafIndex, uint8ArrayToHexString(newData))
+	/**
+	 * Subscribe to be notified whenever addLeafWithTrail is called.
+	 * @param callback Callback receiving the MMRLeafInsertTrail for each new leaf
+	 * @returns Unsubscribe function
+	 */
+	public subscribeToLeafInsertTrail(callback: (trail: MMRLeafInsertTrail) => void): () => void {
+		this.leafInsertTrailSubscribers.push(callback);
+		return () => {
+			const idx = this.leafInsertTrailSubscribers.indexOf(callback);
+			if (idx !== -1) this.leafInsertTrailSubscribers.splice(idx, 1);
+		};
+	}
 	
-
 	/**
 	 * Adds a new leaf to the MMR and computes all intermediate nodes.
 	 * @param newData - The raw data for the new leaf node to be added.
@@ -47,6 +56,15 @@ export class MerkleMountainRange {
 
 		const peakBaggingInfo = await this.rootCIDWithTrail()
 		trail.push(...peakBaggingInfo.trail)
+
+		// Notify all subscribers
+		for (const cb of this.leafInsertTrailSubscribers) {
+			try {
+				cb(trail);
+			} catch (err) {
+				console.error("[MMR] Error in leafInsertTrail subscriber:", err);
+			}
+		}
 
 		return trail
 	}

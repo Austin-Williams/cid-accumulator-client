@@ -27,7 +27,7 @@ export async function rebuildMMR(
 	mmr: MerkleMountainRange,
 	storageAdapter: StorageAdapter,
 ): Promise<void> {
-	console.log(`[Client] ⛰️ Rebuilding the Merkle Mountain Range from synced leaves. (This can take a while)...`)
+	console.log(`[Client] ⛰️ Rebuilding the Merkle Mountain Range from synced leaves. (Runs in background).`)
 	const fromIndex: number = mmr.leafCount
 	const toIndex: number = await storageAdapter.getHighestContiguousLeafIndexWithData()
 	if (fromIndex > toIndex) throw new Error(`[Client] Expected to commit leaves from ${fromIndex} to ${toIndex}, but found no newData for leaf ${fromIndex}`)

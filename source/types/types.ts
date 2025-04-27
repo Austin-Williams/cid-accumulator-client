@@ -85,7 +85,7 @@ export type SyncNamespace = {
 	liveSyncRunning: boolean
 	liveSyncInterval: ReturnType<typeof setTimeout> | undefined
 	websocket: WebSocket | undefined
-	newLeafSubscribers: Array<(index: number, data: string) => void>
+	newLeafEventSubscribers: Array<(index: number, data: string) => void>
 	onNewLeaf: (callback: (index: number, data: string) => void) => () => void
 	startSubscriptionSync: () => void
 	startPollingSync: () => void
@@ -101,7 +101,7 @@ export type IpfsNamespace = {
 	shouldProvide: boolean
 	getAndResolveCID: (cid: CID<unknown, 113, 18, 1>, opts?: { signal?: AbortSignal }) => Promise<boolean>
 	rePinAllDataToIPFS: () => void
-	putPinProvideToIPFS: (cid: CID<unknown, 113, 18, 1>, dagCborEncodedData: DagCborEncodedData) => Promise<boolean>
+	putPinProvideToIPFS: ({ cid, dagCborEncodedData }: { cid: CID<unknown, 113, 18, 1>, dagCborEncodedData: DagCborEncodedData }) => Promise<boolean>
 }
 
 export type StorageNamespace = {

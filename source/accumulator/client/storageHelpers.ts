@@ -92,8 +92,14 @@ export async function getLeafIndexesWithMissingNewData(
  */
 export async function appendTrailToDB(storageAdapter: StorageAdapter, trail: MMRLeafInsertTrail): Promise<void> {
 	let maxIndex = Number((await storageAdapter.get("dag:trail:maxIndex")) ?? -1)
+	
 	for (const pair of trail) {
-		await verifyCIDAgainstDagCborEncodedDataOrThrow(pair.dagCborEncodedData, pair.cid)
+		try {
+			await verifyCIDAgainstDagCborEncodedDataOrThrow(pair.dagCborEncodedData, pair.cid)
+		} catch (err) {
+			console.warn('[appendTrailToDB] 💥 CID verification failed:', err, pair);
+			continue;
+		}
 		const cidStr = pair.cid.toString()
 		const seenKey = `cid:${cidStr}`
 		const alreadyStored = await storageAdapter.get(seenKey)

@@ -34,8 +34,8 @@ export function getSyncNamespace(
 		liveSyncRunning: false,
 		liveSyncInterval: undefined,
 		websocket: undefined,
-		newLeafSubscribers: [],
-		onNewLeaf: (callback: (index: number, data: string) => void) => onNewLeaf(sync.newLeafSubscribers, callback),
+		newLeafEventSubscribers: [],
+		onNewLeaf: (callback: (index: number, data: string) => void) => onNewLeaf(sync.newLeafEventSubscribers, callback),
 		startSubscriptionSync: () =>
 			startSubscriptionSync({
 				mmr,
@@ -46,7 +46,7 @@ export function getSyncNamespace(
 				setWs: (ws) => { sync.websocket = ws },
 				getLastProcessedBlock: () => sync.lastProcessedBlock,
 				setLastProcessedBlock: (b) => { sync.lastProcessedBlock = b },
-				newLeafSubscribers: sync.newLeafSubscribers,
+				newLeafEventSubscribers: sync.newLeafEventSubscribers,
 				contractAddress,
 				getAccumulatorDataCalldataOverride,
 				eventTopicOverride,
@@ -61,7 +61,7 @@ export function getSyncNamespace(
 				setLiveSyncInterval: (interval) => {
 					sync.liveSyncInterval = interval
 				},
-				newLeafSubscribers: sync.newLeafSubscribers,
+				newLeafEventSubscribers: sync.newLeafEventSubscribers,
 				getLastProcessedBlock: () => sync.lastProcessedBlock,
 				setLastProcessedBlock: (b) => {
 					sync.lastProcessedBlock = b
@@ -87,7 +87,7 @@ export function getSyncNamespace(
 				(interval) => {
 					sync.liveSyncInterval = interval
 				},
-				sync.newLeafSubscribers,
+				sync.newLeafEventSubscribers,
 				() => sync.lastProcessedBlock,
 				(b) => {
 					sync.lastProcessedBlock = b

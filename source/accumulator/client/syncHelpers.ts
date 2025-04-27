@@ -175,7 +175,7 @@ export async function startLiveSync(
 	getLiveSyncRunning: () => boolean,
 	setLiveSyncRunning: (isRUnning: boolean) => void,
 	setLiveSyncInterval: (interval: ReturnType<typeof setTimeout> | undefined) => void,
-	newLeafSubscribers: newLeafSubscriber[],
+	newLeafEventSubscribers: newLeafSubscriber[],
 	getLastProcessedBlock: () => number,
 	setLastProcessedBlock: (blockNumber: number) => void,
 	getAccumulatorDataCalldataOverride?: string,
@@ -209,7 +209,7 @@ export async function startLiveSync(
 			setWs,
 			getLastProcessedBlock,
 			setLastProcessedBlock,
-			newLeafSubscribers,
+			newLeafEventSubscribers,
 			contractAddress,
 			getAccumulatorDataCalldataOverride,
 			eventTopicOverride,
@@ -222,7 +222,7 @@ export async function startLiveSync(
 			contractAddress,
 			getLiveSyncRunning,
 			setLiveSyncInterval,
-			newLeafSubscribers,
+			newLeafEventSubscribers,
 			getLastProcessedBlock,
 			setLastProcessedBlock,
 			getAccumulatorDataCalldataOverride,
@@ -333,7 +333,7 @@ export function startPollingSync(params: {
 	contractAddress: string
 	getLiveSyncRunning: () => boolean
 	setLiveSyncInterval: (interval: ReturnType<typeof setTimeout> | undefined) => void
-	newLeafSubscribers: newLeafSubscriber[]
+	newLeafEventSubscribers: newLeafSubscriber[]
 	getLastProcessedBlock: () => number
 	setLastProcessedBlock: (blockNumber: number) => void
 	getAccumulatorDataCalldataOverride?: string
@@ -348,7 +348,7 @@ export function startPollingSync(params: {
 		contractAddress,
 		getLiveSyncRunning,
 		setLiveSyncInterval,
-		newLeafSubscribers,
+		newLeafEventSubscribers,
 		getLastProcessedBlock,
 		setLastProcessedBlock,
 		getAccumulatorDataCalldataOverride,
@@ -380,7 +380,7 @@ export function startPollingSync(params: {
 						ethereumHttpRpcUrl,
 						contractAddress,
 						event,
-						newLeafSubscribers,
+						newLeafEventSubscribers,
 						getAccumulatorDataCalldataOverride,
 						getLatestCidCalldataOverride,
 						eventTopicOverride,
@@ -407,12 +407,12 @@ export function startSubscriptionSync( params: {
 	setWs: (ws: WebSocket | undefined) => void,
 	getLastProcessedBlock: () => number,
 	setLastProcessedBlock: (block: number) => void,
-	newLeafSubscribers: newLeafSubscriber[],
+	newLeafEventSubscribers: newLeafSubscriber[],
 	contractAddress: string,
 	getAccumulatorDataCalldataOverride?: string,
 	eventTopicOverride?: string,
 }): void {
-	const { mmr, storageAdapter, ethereumHttpRpcUrl, ethereumWsRpcUrl, ws, setWs, getLastProcessedBlock, setLastProcessedBlock, newLeafSubscribers, contractAddress, getAccumulatorDataCalldataOverride, eventTopicOverride } = params
+	const { mmr, storageAdapter, ethereumHttpRpcUrl, ethereumWsRpcUrl, ws, setWs, getLastProcessedBlock, setLastProcessedBlock, newLeafEventSubscribers, contractAddress, getAccumulatorDataCalldataOverride, eventTopicOverride } = params
 	if (!ethereumWsRpcUrl) {
 		console.error("[Client] No ETHEREUM_WS_RPC_URL set. Cannot start subscription sync.")
 		return
@@ -473,7 +473,7 @@ export function startSubscriptionSync( params: {
 								ethereumHttpRpcUrl,
 								contractAddress,
 								event,
-								newLeafSubscribers,
+								newLeafEventSubscribers,
 								getAccumulatorDataCalldataOverride,
 								eventTopicOverride,
 							})
@@ -503,19 +503,19 @@ export async function processNewLeafEvent( params: {
 	ethereumHttpRpcUrl: string,
 	contractAddress: string,
 	event: NormalizedLeafInsertEvent,
-	newLeafSubscribers: newLeafSubscriber[],
+	newLeafEventSubscribers: newLeafSubscriber[],
 	getAccumulatorDataCalldataOverride?: string,
 	getLatestCidCalldataOverride?: string,
 	eventTopicOverride?: string,
 }): Promise<void> {
-	const { mmr, storageAdapter, ethereumHttpRpcUrl, contractAddress, event, newLeafSubscribers, getAccumulatorDataCalldataOverride, getLatestCidCalldataOverride, eventTopicOverride } = params
+	const { mmr, storageAdapter, ethereumHttpRpcUrl, contractAddress, event, newLeafEventSubscribers, getAccumulatorDataCalldataOverride, getLatestCidCalldataOverride, eventTopicOverride } = params
 	// handle DB
 	await processNewLeafEventForDB(
 		storageAdapter,
 		ethereumHttpRpcUrl,
 		contractAddress,
 		event,
-		newLeafSubscribers,
+		newLeafEventSubscribers,
 		eventTopicOverride,
 	)
 	// handle MMR
@@ -526,7 +526,7 @@ export async function processNewLeafEvent( params: {
 		event.newData,
 	)
 	// Handle subscribers
-	for (const callback of newLeafSubscribers) callback(event.leafIndex, uint8ArrayToHexString(event.newData))
+	for (const callback of newLeafEventSubscribers) callback(event.leafIndex, uint8ArrayToHexString(event.newData))
 	// SANITY CHECK
 	// === THE FOLLOWING CODE BLOCK CAN BE REMOVED. IT IS JUST A SANITY CHECK. ===
 	const { meta } = await getAccumulatorData({
@@ -566,7 +566,7 @@ async function processNewLeafEventForDB(
 	ethereumHttpRpcUrl: string,
 	contractAddress: string,
 	event: NormalizedLeafInsertEvent,
-	newLeafSubscribers: newLeafSubscriber[],
+	newLeafEventSubscribers: newLeafSubscriber[],
 	eventTopicOverride?: string,
 ): Promise<void> {
 	const highestContiguousLeafIndex = await storageAdapter.getHighestContiguousLeafIndexWithData()
@@ -593,7 +593,7 @@ async function processNewLeafEventForDB(
 				ethereumHttpRpcUrl,
 				contractAddress,
 				pastEvents[i],
-				newLeafSubscribers,
+				newLeafEventSubscribers,
 				eventTopicOverride
 			)
 		}
@@ -641,17 +641,13 @@ export async function processNewLeafEventForMMR(
 		leafIndex,
 		newData,
 	)
-	// TODO: IMPORTANT!MMR should have a callback feature where every time a leaf gets added to it, the trails gets returned to 
-	// subscribers. And the IPFS putPinProvide should be registered as a provider
-	// for (const callback of newMMRCommittedLeafSubscribers) callback(leafIndex, uint8ArrayToHexString(newData))
-	console.log(`[Client] \u{1F343} Added new leaf with index ${leafIndex} to the MMR.`)
 }
 
-export function onNewLeaf(newLeafSubscribers: newLeafSubscriber[], callback: (index: number, data: string) => void): () => void {
-	newLeafSubscribers.push(callback)
+export function onNewLeaf(newLeafEventSubscribers: newLeafSubscriber[], callback: (index: number, data: string) => void): () => void {
+	newLeafEventSubscribers.push(callback)
 	// Return unsubscribe function
 	return () => {
-		const idx = newLeafSubscribers.indexOf(callback)
-		if (idx !== -1) newLeafSubscribers.splice(idx, 1)
+		const idx = newLeafEventSubscribers.indexOf(callback)
+		if (idx !== -1) newLeafEventSubscribers.splice(idx, 1)
 	}
 }
