@@ -38,12 +38,6 @@ export class AccumulatorClient {
 	}
 
 	async init(): Promise<void> {
-		// Expose client in browser to give user control
-		if (isBrowser()) {
-			// @ts-ignore
-			window.accumulatorClient = this
-		}
-
 		// SET UP STORAGE
 		this.storage = await initStorage(this.config)
 		// Ensure DB is open
