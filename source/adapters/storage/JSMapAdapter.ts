@@ -75,6 +75,9 @@ export class JSMapAdapter implements StorageAdapter {
 
 	async persist(): Promise<void> {
 		const obj: Record<string, string> = Object.fromEntries(this.store)
+		// Ensure the directory exists before writing the file
+		const { dirname } = await import("path")
+		await fs.mkdir(dirname(this.filePath), { recursive: true })
 		await fs.writeFile(this.filePath, JSON.stringify(obj), "utf8")
 	}
 
