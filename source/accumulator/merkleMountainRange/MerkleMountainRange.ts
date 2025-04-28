@@ -1,4 +1,4 @@
-import type { MMRLeafInsertTrail } from "../../types/types"
+import type { MMRLeafAppendedTrail } from "../../types/types"
 import { CID } from "../../utils/CID"
 import { encodeBlock } from "../../utils/codec"
 import { NULL_CID } from "../../utils/constants"
@@ -6,20 +6,20 @@ import { NULL_CID } from "../../utils/constants"
 export class MerkleMountainRange {
 	public peaks: CID<unknown, 113, 18, 1>[] = [];
 	public leafCount = 0;
-	private leafInsertTrailSubscribers: ((trail: MMRLeafInsertTrail) => void)[] = []
+	private leafAppendedTrailSubscribers: ((trail: MMRLeafAppendedTrail) => void)[] = []
 
 	constructor() {}
 
 	/**
 	 * Subscribe to be notified whenever addLeafWithTrail is called.
-	 * @param callback Callback receiving the MMRLeafInsertTrail for each new leaf
+	 * @param callback Callback receiving the MMRLeafAppendedTrail for each new leaf
 	 * @returns Unsubscribe function
 	 */
-	public subscribeToLeafInsertTrail(callback: (trail: MMRLeafInsertTrail) => void): () => void {
-		this.leafInsertTrailSubscribers.push(callback);
+	public subscribeToLeafAppendedTrail(callback: (trail: MMRLeafAppendedTrail) => void): () => void {
+		this.leafAppendedTrailSubscribers.push(callback);
 		return () => {
-			const idx = this.leafInsertTrailSubscribers.indexOf(callback);
-			if (idx !== -1) this.leafInsertTrailSubscribers.splice(idx, 1);
+			const idx = this.leafAppendedTrailSubscribers.indexOf(callback);
+			if (idx !== -1) this.leafAppendedTrailSubscribers.splice(idx, 1);
 		};
 	}
 	
@@ -29,10 +29,10 @@ export class MerkleMountainRange {
 	 * @param leafIndex - The expected leaf index for the new leaf.
 	 * @returns An array of CID and data pairs for leaf, all intermediate nodes, and the root
 	 */
-	async addLeafWithTrail(leafIndex: number, newData: Uint8Array): Promise<MMRLeafInsertTrail> {
+	async addLeafWithTrail(leafIndex: number, newData: Uint8Array): Promise<MMRLeafAppendedTrail> {
 		if (this.leafCount !== leafIndex) throw new Error(`Expected leafIndex ${this.leafCount} but got ${leafIndex}`)
 
-		const trail: MMRLeafInsertTrail = []
+		const trail: MMRLeafAppendedTrail = []
 
 		const { cid: leafCID, dagCborEncodedData: dagCborEncodedLeafData } = await encodeBlock(newData)
 		trail.push({ cid: leafCID, dagCborEncodedData: dagCborEncodedLeafData })
@@ -58,11 +58,11 @@ export class MerkleMountainRange {
 		trail.push(...peakBaggingInfo.trail)
 
 		// Notify all subscribers
-		for (const cb of this.leafInsertTrailSubscribers) {
+		for (const cb of this.leafAppendedTrailSubscribers) {
 			try {
 				cb(trail);
 			} catch (err) {
-				console.error("[MMR] Error in leafInsertTrail subscriber:", err);
+				console.error("[MMR] Error in leafAppendedTrail subscriber:", err);
 			}
 		}
 
@@ -71,9 +71,9 @@ export class MerkleMountainRange {
 
 	async rootCIDWithTrail(): Promise<{
 		root: CID<unknown, 113, 18, 1> // Redundant (because the last item in the trail is the root) but convenient
-		trail: MMRLeafInsertTrail
+		trail: MMRLeafAppendedTrail
 	}> {
-		const trail: MMRLeafInsertTrail = []
+		const trail: MMRLeafAppendedTrail = []
 
 		if (this.peaks.length === 0) {
 			return { root: NULL_CID, trail: [] }

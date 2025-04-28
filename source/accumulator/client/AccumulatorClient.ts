@@ -2,7 +2,7 @@ import type {
 	AccumulatorClientConfig,
 	DataNamespace,
 	IpfsNamespace,
-	MMRLeafInsertTrail,
+	MMRLeafAppendedTrail,
 	StorageNamespace,
 	SyncNamespace,
 } from "../../types/types"
@@ -49,8 +49,8 @@ export class AccumulatorClient {
 		this.ipfs = await initIpfs(this.config, this.storage!.storageAdapter)
 		// If IPFS is set up to pin, subscribe to MMR leaf inserts and pin all relevant CIDs
 		if (this.ipfs.shouldPin) {
-			this.mmr.subscribeToLeafInsertTrail(
-				(trail: MMRLeafInsertTrail) => {
+			this.mmr.subscribeToLeafAppendedTrail(
+				(trail: MMRLeafAppendedTrail) => {
 					for (const {cid, dagCborEncodedData} of trail) {
 						this.ipfs?.putPinProvideToIPFS({cid, dagCborEncodedData})
 					}
@@ -65,8 +65,8 @@ export class AccumulatorClient {
 			this.storage.storageAdapter,
 			this.ipfs,
 			this.mmr,
-			this.config.GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE,
-			this.config.LEAF_INSERT_EVENT_SIGNATURE_OVERRIDE,
+			this.config.GET_STATE_CALLDATA_OVERRIDE,
+			this.config.LEAF_APPENDED_EVENT_SIGNATURE_OVERRIDE,
 		)
 
 		// SET UP DATA (friendly "front-end" to storage)
@@ -89,35 +89,15 @@ export class AccumulatorClient {
 			this.sync.ethereumHttpRpcUrl,
 			this.sync.contractAddress,
 			(block: number) => (this.sync!.lastProcessedBlock = block),
-			this.config.GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE,
-			this.config.LEAF_INSERT_EVENT_SIGNATURE_OVERRIDE,
+			this.config.GET_STATE_CALLDATA_OVERRIDE,
+			this.config.LEAF_APPENDED_EVENT_SIGNATURE_OVERRIDE,
 			this.config.ETHEREUM_MAX_BLOCK_RANGE_PER_HTTP_RPC_CALL ?? 1000,
 		)
 
 		rebuildMMR(this.mmr, this.storage.storageAdapter) // Fire-and-forget
 		
-		//this.ipfs.rePinAllDataToIPFS() // Fire-and-forget, no-ops if this.ipfs.shouldPin is false
-
 		this.sync.startLiveSync()
-		//startLiveSync(
-		//	// Fire-and-forget
-		//	this.mmr,
-		//	this.storage.storageAdapter,
-		//	this.sync.contractAddress,
-		//	this.sync.ethereumHttpRpcUrl,
-		//	this.sync.ethereumWsRpcUrl,
-		//	this.sync.websocket,
-		//	(newWs: WebSocket | undefined) => (this.sync!.websocket = newWs),
-		//	() => this.sync!.liveSyncRunning,
-		//	(isRunning: boolean) => (this.sync!.liveSyncRunning = isRunning),
-		//	(interval: ReturnType<typeof setTimeout> | undefined) => (this.sync!.liveSyncInterval = interval),
-		//	this.sync.newLeafEventSubscribers,
-		//	() => this.sync!.lastProcessedBlock,
-		//	(block: number) => (this.sync!.lastProcessedBlock = block),
-		//	this.config.GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE,
-		//	this.config.GET_LATEST_CID_CALLDATA_OVERRIDE,
-		//	this.config.LEAF_INSERT_EVENT_SIGNATURE_OVERRIDE,
-		//)
+		
 		console.log("[Client] 🟢 Client is ready to use.")
 	}
 

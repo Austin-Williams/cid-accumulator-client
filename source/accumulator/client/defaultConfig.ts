@@ -41,15 +41,15 @@ export const defaultConfig: AccumulatorClientConfig = {
 	// If undefined, will default to './.db/accumulator.json' (relative to the current working directory).
 	DB_PATH: undefined,
 
-	// (Advanced, optional) Override calldata for the getLatestCID() contract call.
+	// (Advanced, optional) Override calldata for the getRootCID() contract call.
 	// Only set if your contract uses a nonstandard method signature.
-	GET_LATEST_CID_CALLDATA_OVERRIDE: undefined,
+	GET_ROOT_CID_CALLDATA_OVERRIDE: undefined,
 
-	// (Advanced, optional) Override calldata for the getAccumulatorData() contract call.
+	// (Advanced, optional) Override calldata for the getState() contract call.
 	// Only set if your contract uses a nonstandard method signature.
-	GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE: undefined,
+	GET_STATE_CALLDATA_OVERRIDE: undefined,
 
-	// (Advanced, optional) Override the event signature for LeafInsert events.
+	// (Advanced, optional) Override the event signature for LeafAppended events.
 	// Only set if your contract uses a nonstandard event signature.
-	LEAF_INSERT_EVENT_SIGNATURE_OVERRIDE: undefined,
+	LEAF_APPENDED_EVENT_SIGNATURE_OVERRIDE: undefined,
 }

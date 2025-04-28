@@ -32,7 +32,7 @@ export async function ethRpcFetch(ethereumHttpRpcUrl: string, method: string, pa
 }
 
 /**
- * Calls a contract view function (e.g., getAccumulatorData, getLatestCID) using eth_call.
+ * Calls a contract view function (e.g., getState, getRootCID) using eth_call.
  * @param ethereumHttpRpcUrl string
  * @param contractAddress string
  * @param data string (ABI-encoded call data)

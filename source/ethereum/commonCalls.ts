@@ -1,7 +1,7 @@
-import { getSelector, getEventTopic, parseLeafInsertLog } from "./abiUtils"
+import { getSelector, getEventTopic, parseLeafAppendedLog } from "./abiUtils"
 import { callContractView, ethRpcFetch } from "./ethRpcFetch"
-import { parseGetLatestCIDResult, parseGetAccumulatorDataResult, parseAccumulatorMetaBits } from "./abiUtils"
-import { AccumulatorMetadata, NormalizedLeafInsertEvent, PeakWithHeight, RawEthLog } from "../types/types"
+import { parseGetRootCIDResult, parseGetStateResult, parseAccumulatorMetaBits } from "./abiUtils"
+import { AccumulatorMetadata, NormalizedLeafAppendedtEvent, PeakWithHeight, RawEthLog } from "../types/types"
 import { CID } from "../utils/CID.js"
 import { contractPeakHexToMmrCid } from "../utils/codec"
 
@@ -11,37 +11,37 @@ import { contractPeakHexToMmrCid } from "../utils/codec"
  * @param contractAddress - The deployed contract address
  * @returns The latest CID as a multiformats.CID object
  */
-export async function getLatestCID(params: {
+export async function getRootCID(params: {
 	ethereumHttpRpcUrl: string
 	contractAddress: string
-	getLatestCidSignatureOverride?: string
-	getLatestCidCalldataOverride?: string
+	getRootCidSignatureOverride?: string
+	getRootCidCalldataOverride?: string
 	blockTag?: number
 }): Promise<CID> {
-	const { ethereumHttpRpcUrl, contractAddress, getLatestCidSignatureOverride, getLatestCidCalldataOverride, blockTag } =
+	const { ethereumHttpRpcUrl, contractAddress, getRootCidSignatureOverride, getRootCidCalldataOverride, blockTag } =
 		params
 	const blockTagHex: string = blockTag ? "0x" + blockTag.toString(16) : "latest"
-	const signature = getLatestCidSignatureOverride ?? "getLatestCID()"
+	const signature = getRootCidSignatureOverride ?? "getRootCID()"
 	const selector = getSelector(signature)
-	const callData = getLatestCidCalldataOverride ?? selector
+	const callData = getRootCidCalldataOverride ?? selector
 	const contractRootHex: string = await callContractView(ethereumHttpRpcUrl, contractAddress, callData, blockTagHex)
-	const contractRootBytes = parseGetLatestCIDResult(contractRootHex)
+	const contractRootBytes = parseGetRootCIDResult(contractRootHex)
 	return CID.decode(Uint8Array.from(contractRootBytes))
 }
 
-export async function getAccumulatorData(params: {
+export async function getState(params: {
 	ethereumHttpRpcUrl: string
 	contractAddress: string
-	getAccumulatorDataCalldataOverride?: string
+	getStateCalldataOverride?: string
 	blockTag?: number
 }): Promise<{ meta: AccumulatorMetadata; peaks: PeakWithHeight[] }> {
 	try {
-		const { ethereumHttpRpcUrl, contractAddress, getAccumulatorDataCalldataOverride, blockTag } = params
+		const { ethereumHttpRpcUrl, contractAddress, getStateCalldataOverride, blockTag } = params
 		const blockTagHex: string = blockTag ? "0x" + blockTag.toString(16) : "latest"
 
-		const signature = "getAccumulatorData()"
+		const signature = "getState()"
 		const selector = getSelector(signature)
-		const callData = getAccumulatorDataCalldataOverride ?? selector
+		const callData = getStateCalldataOverride ?? selector
 		const accumulatorDataHex: string = await callContractView(
 			ethereumHttpRpcUrl,
 			contractAddress,
@@ -49,7 +49,7 @@ export async function getAccumulatorData(params: {
 			blockTagHex,
 		)
 
-		const [mmrMetaBits, peaks] = parseGetAccumulatorDataResult(accumulatorDataHex)
+		const [mmrMetaBits, peaks] = parseGetStateResult(accumulatorDataHex)
 		const meta = parseAccumulatorMetaBits(mmrMetaBits)
 		const activePeaks: Uint8Array[] = peaks.slice(0, meta.peakCount) // only active peaks
 		const activePeaksAsCids: CID<unknown, 113, 18, 1>[] = activePeaks.map(contractPeakHexToMmrCid)
@@ -59,7 +59,7 @@ export async function getAccumulatorData(params: {
 		}))
 		return { meta, peaks: activePeaksWithHeight }
 	} catch (err) {
-		console.error("][getAccumulatorData] Error:", err)
+		console.error("[getState] Error:", err)
 		throw err
 	}
 }
@@ -71,7 +71,7 @@ function toHexBlock(n: number): string {
 }
 
 /**
- * Finds LeafInsert events using eth_getLogs.
+ * Finds LeafAppended events using eth_getLogs.
  * @param ethereumHttpRpcUrl string
  * @param contractAddress string
  * @param eventTopic string (keccak256 hash of event signature)
@@ -79,15 +79,15 @@ function toHexBlock(n: number): string {
  * @param toBlock string (hex or "latest")
  * @returns Promise<any[]> (array of log objects)
  */
-export async function getLeafInsertLogs(params: {
+export async function getLeafAppendedLogs(params: {
 	ethereumHttpRpcUrl: string
 	contractAddress: string
 	fromBlock: number
 	toBlock: number
 	eventTopicOverride?: string
-}): Promise<NormalizedLeafInsertEvent[]> {
+}): Promise<NormalizedLeafAppendedtEvent[]> {
 	const { ethereumHttpRpcUrl, contractAddress, fromBlock, toBlock, eventTopicOverride } = params
-	const eventTopic = eventTopicOverride ?? getEventTopic("LeafInsert(uint32,uint32,bytes,bytes32[])")
+	const eventTopic = eventTopicOverride ?? getEventTopic("LeafAppended(uint32,uint32,bytes,bytes32[])")
 	const rawLogs: RawEthLog[] = await ethRpcFetch(ethereumHttpRpcUrl, "eth_getLogs", [
 		{
 			address: contractAddress,
@@ -103,7 +103,7 @@ export async function getLeafInsertLogs(params: {
 		const expected = eventTopic.toLowerCase()
 		if (!log.topics || topic0 !== expected) {
 			console.warn(
-				`[WARN:getLeafInsertLogs] log[${idx}].topics[0] does not match eventTopic. topics[0]:`,
+				`[WARN:getLeafAppendedLogs] log[${idx}].topics[0] does not match eventTopic. topics[0]:`,
 				topic0,
 				"| eventTopic:",
 				expected,
@@ -111,18 +111,18 @@ export async function getLeafInsertLogs(params: {
 		}
 	})
 
-	const parsedLogs: NormalizedLeafInsertEvent[] = await Promise.all(
+	const parsedLogs: NormalizedLeafAppendedtEvent[] = await Promise.all(
 		rawLogs
 			.filter((log) => log.topics && log.topics[0] && log.topics[0].toLowerCase() === eventTopic.toLowerCase())
 			.map(async (log) => {
-				return await parseLeafInsertLog(log)
+				return await parseLeafAppendedLog(log)
 			}),
 	)
 	return parsedLogs
 }
 
 /**
- * Finds a LeafInsert log for a specific leaf index using eth_getLogs.
+ * Finds a LeafAppended log for a specific leaf index using eth_getLogs.
  * @param ethereumHttpRpcUrl string
  * @param contractAddress string
  * @param eventTopic string (keccak256 hash of event signature)
@@ -131,16 +131,16 @@ export async function getLeafInsertLogs(params: {
  * @param targetLeafIndex number (the leaf index to filter for)
  * @returns Promise<any[]> (array of log objects for that leaf index)
  */
-export async function getLeafInsertLogForTargetLeafIndex(params: {
+export async function getLeafAppendedLogForTargetLeafIndex(params: {
 	ethereumHttpRpcUrl: string
 	contractAddress: string
 	fromBlock: number
 	toBlock: number
 	targetLeafIndex: number
 	eventTopicOverride?: string
-}): Promise<NormalizedLeafInsertEvent | null> {
+}): Promise<NormalizedLeafAppendedtEvent | null> {
 	const { ethereumHttpRpcUrl, contractAddress, fromBlock, toBlock, targetLeafIndex, eventTopicOverride } = params
-	const eventTopic = eventTopicOverride ?? getEventTopic("LeafInsert(uint32,uint32,bytes,bytes32[])")
+	const eventTopic = eventTopicOverride ?? getEventTopic("LeafAppended(uint32,uint32,bytes,bytes32[])")
 	const leafIndexTopic = "0x" + targetLeafIndex.toString(16).padStart(64, "0")
 	const topics = [eventTopic, leafIndexTopic]
 	const rawLogs: RawEthLog[] = await ethRpcFetch(ethereumHttpRpcUrl, "eth_getLogs", [
@@ -154,5 +154,5 @@ export async function getLeafInsertLogForTargetLeafIndex(params: {
 	if (rawLogs.length > 1)
 		throw new Error(`Multiple logs found for leaf index ${targetLeafIndex} in range ${fromBlock}-${toBlock}`)
 	if (rawLogs.length === 0) return null
-	return parseLeafInsertLog(rawLogs[0])
+	return parseLeafAppendedLog(rawLogs[0])
 }

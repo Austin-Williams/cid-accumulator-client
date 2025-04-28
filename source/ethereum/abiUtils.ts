@@ -1,5 +1,5 @@
 import { keccak_256 } from "@noble/hashes/sha3"
-import { AccumulatorMetadata, RawEthLog, NormalizedLeafInsertEvent, DagCborEncodedData } from "../types/types"
+import { AccumulatorMetadata, RawEthLog, NormalizedLeafAppendedtEvent, DagCborEncodedData } from "../types/types"
 import { contractPeakHexToMmrCid } from "../utils/codec"
 import { CID } from "../utils/CID.js"
 
@@ -22,13 +22,13 @@ export function getEventTopic(signature: string): string {
 }
 
 /**
- * Parses the ABI-encoded result of a contract call to getLatestCID() -> bytes.
+ * Parses the ABI-encoded result of a contract call to getRootCID() -> bytes.
  * @param abiResult string (0x-prefixed hex string)
  * @returns Uint8Array (decoded bytes)
  */
 import { hexStringToUint8Array } from "../utils/codec"
 
-export function parseGetLatestCIDResult(abiResult: string): Uint8Array {
+export function parseGetRootCIDResult(abiResult: string): Uint8Array {
 	// ABI encoding for bytes: 32 bytes offset, then 32 bytes length, then data
 	const buf = hexStringToUint8Array(abiResult)
 	if (buf.length < 64) throw new Error("Result too short for ABI-encoded bytes")
@@ -38,7 +38,7 @@ export function parseGetLatestCIDResult(abiResult: string): Uint8Array {
 	return buf.slice(64, 64 + len)
 }
 
-export function parseGetAccumulatorDataResult(hex: string): [bigint, DagCborEncodedData[]] {
+export function parseGetStateResult(hex: string): [bigint, DagCborEncodedData[]] {
 	const data = hex.startsWith("0x") ? hex.slice(2) : hex
 	if (data.length < 64 + 32 * 64) throw new Error("Result too short for ABI-encoded tuple")
 	const mmrMetaBits = BigInt("0x" + data.slice(0, 64))
@@ -71,7 +71,7 @@ export function parseAccumulatorMetaBits(mmrMetaBits: bigint): AccumulatorMetada
 	}
 }
 
-export async function parseLeafInsertLog(log: RawEthLog): Promise<NormalizedLeafInsertEvent> {
+export async function parseLeafAppendedLog(log: RawEthLog): Promise<NormalizedLeafAppendedtEvent> {
 	// Helper to parse a 32-byte hex as uint32 (big-endian)
 	function parseUint32FromTopic(topic: string): number {
 		return parseInt(topic.slice(-8), 16) // last 4 bytes
@@ -85,33 +85,33 @@ export async function parseLeafInsertLog(log: RawEthLog): Promise<NormalizedLeaf
 	// previousInsertBlockNumber: first 32 bytes (offset 0)
 	const previousInsertBlockNumber = parseInt(data.slice(56, 64), 16)
 
-	// Offsets for dynamic fields (newData, leftInputs)
+	// Offsets for dynamic fields (newData, mergeLeftHashes)
 	const newDataOffset = parseInt(data.slice(64, 128), 16) * 2
-	const leftInputsOffset = parseInt(data.slice(128, 192), 16) * 2
+	const mergeLeftHashesOffset = parseInt(data.slice(128, 192), 16) * 2
 
 	// newData: at newDataOffset, first 32 bytes = length, then bytes
 	const newDataLen = parseInt(data.slice(newDataOffset, newDataOffset + 64), 16)
 	const newDataHex = data.slice(newDataOffset + 64, newDataOffset + 64 + newDataLen * 2)
 	const newData = hexStringToUint8Array(newDataHex)
 
-	// leftInputs: at leftInputsOffset, first 32 bytes = length, then array of bytes32
-	const leftInputsLen = parseInt(data.slice(leftInputsOffset, leftInputsOffset + 64), 16)
-	const leftInputs: Uint8Array[] = []
-	let leftInputsCursor = leftInputsOffset + 64
-	for (let i = 0; i < leftInputsLen; i++) {
-		const hexStr = data.slice(leftInputsCursor, leftInputsCursor + 64)
-		leftInputs.push(hexStringToUint8Array(hexStr))
-		leftInputsCursor += 64
+	// mergeLeftHashes: at mergeLeftHashesOffset, first 32 bytes = length, then array of bytes32
+	const mergeLeftHashesLen = parseInt(data.slice(mergeLeftHashesOffset, mergeLeftHashesOffset + 64), 16)
+	const mergeLeftHashes: Uint8Array[] = []
+	let mergeLeftHashesCursor = mergeLeftHashesOffset + 64
+	for (let i = 0; i < mergeLeftHashesLen; i++) {
+		const hexStr = data.slice(mergeLeftHashesCursor, mergeLeftHashesCursor + 64)
+		mergeLeftHashes.push(hexStringToUint8Array(hexStr))
+		mergeLeftHashesCursor += 64
 	}
-	const leftInputsAsCIDs: CID<unknown, 113, 18, 1>[] = await Promise.all(
-		leftInputs.map(async (input) => contractPeakHexToMmrCid(input)),
+	const mergeLeftHashesAsCIDs: CID<unknown, 113, 18, 1>[] = await Promise.all(
+		mergeLeftHashes.map(async (input) => contractPeakHexToMmrCid(input)),
 	)
 
 	return {
 		leafIndex,
 		previousInsertBlockNumber,
 		newData,
-		leftInputs: leftInputsAsCIDs,
+		mergeLeftHashes: mergeLeftHashesAsCIDs,
 		blockNumber: log.blockNumber,
 		transactionHash: log.transactionHash,
 		removed: log.removed,

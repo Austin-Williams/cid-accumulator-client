@@ -20,8 +20,8 @@ export function getSyncNamespace(
 	ethereumWsRpcUrl: string | undefined,
 	contractAddress: string,
 	lastProcessedBlock: number,
-	getAccumulatorDataCalldataOverride: string | undefined,
-	getLatestCidCalldataOverride: string | undefined,
+	getStateCalldataOverride: string | undefined,
+	getRootCidCalldataOverride: string | undefined,
 	eventTopicOverride: string | undefined,
 	maxBlockRangePerRpcCall: number,
 ): SyncNamespace {
@@ -34,8 +34,8 @@ export function getSyncNamespace(
 		liveSyncRunning: false,
 		liveSyncInterval: undefined,
 		websocket: undefined,
-		newLeafEventSubscribers: [],
-		onNewLeaf: (callback: (index: number, data: string) => void) => onNewLeaf(sync.newLeafEventSubscribers, callback),
+		newLeafAppendedEventSubscribers: [],
+		onNewLeaf: (callback: (index: number, data: string) => void) => onNewLeaf(sync.newLeafAppendedEventSubscribers, callback),
 		startSubscriptionSync: () =>
 			startSubscriptionSync({
 				mmr,
@@ -46,9 +46,9 @@ export function getSyncNamespace(
 				setWs: (ws) => { sync.websocket = ws },
 				getLastProcessedBlock: () => sync.lastProcessedBlock,
 				setLastProcessedBlock: (b) => { sync.lastProcessedBlock = b },
-				newLeafEventSubscribers: sync.newLeafEventSubscribers,
+				newLeafAppendedEventSubscribers: sync.newLeafAppendedEventSubscribers,
 				contractAddress,
-				getAccumulatorDataCalldataOverride,
+				getStateCalldataOverride,
 				eventTopicOverride,
 			}),
 		startPollingSync: () =>
@@ -61,12 +61,12 @@ export function getSyncNamespace(
 				setLiveSyncInterval: (interval) => {
 					sync.liveSyncInterval = interval
 				},
-				newLeafEventSubscribers: sync.newLeafEventSubscribers,
+				newLeafAppendedEventSubscribers: sync.newLeafAppendedEventSubscribers,
 				getLastProcessedBlock: () => sync.lastProcessedBlock,
 				setLastProcessedBlock: (b) => {
 					sync.lastProcessedBlock = b
 				},
-				getAccumulatorDataCalldataOverride,
+				getRootCidCalldataOverride,
 				eventTopicOverride,
 			}),
 		startLiveSync: () =>
@@ -87,13 +87,13 @@ export function getSyncNamespace(
 				(interval) => {
 					sync.liveSyncInterval = interval
 				},
-				sync.newLeafEventSubscribers,
+				sync.newLeafAppendedEventSubscribers,
 				() => sync.lastProcessedBlock,
 				(b) => {
 					sync.lastProcessedBlock = b
 				},
-				getAccumulatorDataCalldataOverride,
-				getLatestCidCalldataOverride,
+				getStateCalldataOverride,
+				getRootCidCalldataOverride,
 				eventTopicOverride,
 			),
 		stopLiveSync: () =>
@@ -119,7 +119,7 @@ export function getSyncNamespace(
 				(b) => {
 					sync.lastProcessedBlock = b
 				},
-				getAccumulatorDataCalldataOverride,
+				getStateCalldataOverride,
 				eventTopicOverride,
 				maxBlockRangePerRpcCall,
 			),

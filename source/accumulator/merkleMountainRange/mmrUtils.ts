@@ -26,14 +26,14 @@ export async function getRootCIDFromPeaks(peaks: CID<unknown, 113, 18, 1>[]): Pr
 export async function computePreviousRootCIDAndPeaksWithHeights(
 	currentPeaksWithHeights: PeakWithHeight[],
 	newData: Uint8Array,
-	leftInputsDuringLatestMerge: CID<unknown, 113, 18, 1>[],
+	mergeLeftHashesDuringLatestMerge: CID<unknown, 113, 18, 1>[],
 ): Promise<{ previousRootCID: CID<unknown, 113, 18, 1>; previousPeaksWithHeights: PeakWithHeight[] }> {
 	// Defensive copy
 	let peaks: PeakWithHeight[] = currentPeaksWithHeights.map((p) => ({ cid: p.cid, height: p.height }))
 
 	if (currentPeaksWithHeights.length == 0) return { previousRootCID: NULL_CID, previousPeaksWithHeights: [] } // if there are no peaks now, there never were
 
-	if (leftInputsDuringLatestMerge.length === 0) {
+	if (mergeLeftHashesDuringLatestMerge.length === 0) {
 		// No merges, just remove the peak with height 0
 		const previousPeaksWithHeights = currentPeaksWithHeights.filter((p) => p.height !== 0)
 		const previousRootCID: CID<unknown, 113, 18, 1> = await getRootCIDFromPeaks(
@@ -44,12 +44,12 @@ export async function computePreviousRootCIDAndPeaksWithHeights(
 
 	// Unmerge for each left input (reverse order)
 	let reconstructedPeaks: PeakWithHeight[] = [...peaks]
-	for (let i = leftInputsDuringLatestMerge.length - 1; i >= 0; i--) {
+	for (let i = mergeLeftHashesDuringLatestMerge.length - 1; i >= 0; i--) {
 		const mergedPeak = reconstructedPeaks.pop()
 		if (!mergedPeak) throw new Error("No mergedPeak to unmerge")
 		const childHeight = mergedPeak.height - 1
 		// Push left and right children as new peaks
-		reconstructedPeaks.push({ cid: leftInputsDuringLatestMerge[i], height: childHeight })
+		reconstructedPeaks.push({ cid: mergeLeftHashesDuringLatestMerge[i], height: childHeight })
 		reconstructedPeaks.push({ cid: mergedPeak.cid, height: childHeight })
 	}
 

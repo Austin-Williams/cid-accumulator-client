@@ -1,5 +1,5 @@
-import { getLeafInsertLogForTargetLeafIndex } from "../ethereum/commonCalls"
-import { NormalizedLeafInsertEvent } from "../types/types"
+import { getLeafAppendedLogForTargetLeafIndex } from "../ethereum/commonCalls"
+import { NormalizedLeafAppendedtEvent } from "../types/types"
 
 /**
  * Walks back along the previousInsertBlockNumber chain, starting from fromLeafIndex,
@@ -9,20 +9,20 @@ import { NormalizedLeafInsertEvent } from "../types/types"
  * This is intended to be used only for filling in a few missed leaves for accumulator nodes that are already synced
  * and are processing live events.
  */
-export async function walkBackLeafInsertLogsOrThrow(
+export async function walkBackLeafAppendedLogsOrThrow(
 	ethereumHttpRpcUrl: string,
 	contractAddress: string,
 	fromLeafIndex: number,
 	fromLeafIndexBlockNumber: number,
 	toLeafIndex: number, // inclusive; oldest leaf index to walk back to
 	eventTopicOverride?: string,
-): Promise<NormalizedLeafInsertEvent[]> {
+): Promise<NormalizedLeafAppendedtEvent[]> {
 	let currentLeafIndex = fromLeafIndex
 	let currentLeafIndexBlockNumber = fromLeafIndexBlockNumber
-	const logs: NormalizedLeafInsertEvent[] = []
+	const logs: NormalizedLeafAppendedtEvent[] = []
 
 	while (currentLeafIndex >= toLeafIndex) {
-		const log: NormalizedLeafInsertEvent | null = await getLeafInsertLogForTargetLeafIndex({
+		const log: NormalizedLeafAppendedtEvent | null = await getLeafAppendedLogForTargetLeafIndex({
 			ethereumHttpRpcUrl,
 			contractAddress,
 			fromBlock: currentLeafIndexBlockNumber,
@@ -32,20 +32,20 @@ export async function walkBackLeafInsertLogsOrThrow(
 		})
 		if (!log) {
 			throw new Error(
-				`Missing LeafInsert log for leafIndex=${currentLeafIndex} in block=${currentLeafIndexBlockNumber}`,
+				`Missing LeafAppended log for leafIndex=${currentLeafIndex} in block=${currentLeafIndexBlockNumber}`,
 			)
 		}
 		logs.push(log)
 		if (currentLeafIndex === toLeafIndex) break
 		// Defensive: avoid infinite loop
 		if (log.leafIndex === undefined || log.previousInsertBlockNumber === undefined) {
-			throw new Error(`[walkBackLeafInsertLogsOrThrow] Malformed LeafInsert log at leafIndex ${currentLeafIndex}`)
+			throw new Error(`[walkBackLeafAppendedLogsOrThrow] Malformed LeafAppended log at leafIndex ${currentLeafIndex}`)
 		}
 		// Prepare for next iteration
 		currentLeafIndex = log.leafIndex - 1
 		currentLeafIndexBlockNumber = log.previousInsertBlockNumber
 		if (currentLeafIndex < toLeafIndex) {
-			throw new Error(`[walkBackLeafInsertLogsOrThrow] Walkback went past toLeafIndex (${toLeafIndex})`)
+			throw new Error(`[walkBackLeafAppendedLogsOrThrow] Walkback went past toLeafIndex (${toLeafIndex})`)
 		}
 	}
 

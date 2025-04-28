@@ -12,9 +12,9 @@ export interface AccumulatorClientConfig {
 	IPFS_PIN_IF_POSSIBLE: boolean
 	IPFS_PROVIDE_IF_POSSIBLE: boolean
 	DB_PATH: string | undefined
-	GET_LATEST_CID_CALLDATA_OVERRIDE: string | undefined
-	GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE: string | undefined
-	LEAF_INSERT_EVENT_SIGNATURE_OVERRIDE: string | undefined
+	GET_ROOT_CID_CALLDATA_OVERRIDE: string | undefined
+	GET_STATE_CALLDATA_OVERRIDE: string | undefined
+	LEAF_APPENDED_EVENT_SIGNATURE_OVERRIDE: string | undefined
 }
 
 export interface RawEthLog {
@@ -30,12 +30,11 @@ export interface RawEthLog {
 	// Some providers/libraries may add extra fields, but these are standard
 }
 
-export interface NormalizedLeafInsertEvent {
+export interface NormalizedLeafAppendedtEvent {
 	leafIndex: number
 	previousInsertBlockNumber: number
 	newData: Uint8Array
-	// leftInputs: Uint8Array[] // "left hashes" as raw 32-byte hashes (not dag-cbor encoded CIDs).
-	leftInputs: CID<unknown, 113, 18, 1>[]
+	mergeLeftHashes: CID<unknown, 113, 18, 1>[]
 	blockNumber: number
 	transactionHash: string
 	removed: boolean
@@ -55,14 +54,14 @@ export interface AccumulatorMetadata {
 export type PeakWithHeight = { cid: CID<unknown, 113, 18, 1>; height: number }
 
 // contains the CID and data for the leaf, all new intermediate nodes, and the new root node
-export type MMRLeafInsertTrail = { cid: CID<unknown, 113, 18, 1>; dagCborEncodedData: DagCborEncodedData }[]
+export type MMRLeafAppendedTrail = { cid: CID<unknown, 113, 18, 1>; dagCborEncodedData: DagCborEncodedData }[]
 
 /**
  * Represents all relevant data for a leaf/event in the accumulator.
  */
 export type LeafRecord = {
 	newData: Uint8Array
-	event?: NormalizedLeafInsertEvent
+	event?: NormalizedLeafAppendedtEvent
 	blockNumber?: number
 	rootCid?: CID<unknown, 113, 18, 1>
 	peaksWithHeights?: PeakWithHeight[] // This is the set of active peaks of the mmr AFTER this leaf/event is inserted.
@@ -85,7 +84,7 @@ export type SyncNamespace = {
 	liveSyncRunning: boolean
 	liveSyncInterval: ReturnType<typeof setTimeout> | undefined
 	websocket: WebSocket | undefined
-	newLeafEventSubscribers: Array<(index: number, data: string) => void>
+	newLeafAppendedEventSubscribers: Array<(index: number, data: string) => void>
 	onNewLeaf: (callback: (index: number, data: string) => void) => () => void
 	startSubscriptionSync: () => void
 	startPollingSync: () => void

@@ -1,5 +1,5 @@
 import { CID } from "../../utils/CID"
-import type { LeafRecord, CIDDataPair, MMRLeafInsertTrail } from "../../types/types"
+import type { LeafRecord, CIDDataPair, MMRLeafAppendedTrail } from "../../types/types"
 import { StorageAdapter } from "../../interfaces/StorageAdapter"
 import { verifyCIDAgainstDagCborEncodedDataOrThrow } from "../../utils/verifyCID"
 import {
@@ -7,8 +7,8 @@ import {
 	stringFromDBToCIDDataPair,
 	uint8ArrayToHexString,
 	hexStringToUint8Array,
-	normalizedLeafInsertEventToString,
-	stringToNormalizedLeafInsertEvent,
+	normalizedLeafAppendedtEventToString,
+	stringToNormalizedLeafAppendedtEvent,
 	stringToPeakWithHeightArray,
 	peakWithHeightArrayToStringForDB,
 } from "../../utils/codec"
@@ -29,7 +29,7 @@ export async function putLeafRecordInDB(
 	await storageAdapter.put(`leaf:${leafIndex}:newData`, uint8ArrayToHexString(value.newData))
 	// Store optional fields as strings
 	if (value.event !== undefined)
-		await storageAdapter.put(`leaf:${leafIndex}:event`, normalizedLeafInsertEventToString(value.event))
+		await storageAdapter.put(`leaf:${leafIndex}:event`, normalizedLeafAppendedtEventToString(value.event))
 	if (value.blockNumber !== undefined)
 		await storageAdapter.put(`leaf:${leafIndex}:blockNumber`, value.blockNumber.toString())
 	if (value.rootCid !== undefined) await storageAdapter.put(`leaf:${leafIndex}:rootCid`, value.rootCid.toString())
@@ -49,7 +49,7 @@ export async function getLeafRecord(
 	if (newDataStr === undefined || newDataStr === null) return undefined
 	const newData = hexStringToUint8Array(newDataStr)
 	const eventStr = await storageAdapter.get(`leaf:${leafIndex}:event`)
-	const event = eventStr !== undefined ? stringToNormalizedLeafInsertEvent(eventStr) : undefined
+	const event = eventStr !== undefined ? stringToNormalizedLeafAppendedtEvent(eventStr) : undefined
 	const blockNumberStr = await storageAdapter.get(`leaf:${leafIndex}:blockNumber`)
 	const blockNumber = blockNumberStr !== undefined ? parseInt(blockNumberStr, 10) : undefined
 	const rootCidStr = await storageAdapter.get(`leaf:${leafIndex}:rootCid`)
@@ -90,7 +90,7 @@ export async function getLeafIndexesWithMissingNewData(
  * Each pair is stored as dag:trail:<index>. The max index is tracked by dag:trail:maxIndex.
  * Does not store a CID/Data pair if it is already in the DB
  */
-export async function appendTrailToDB(storageAdapter: StorageAdapter, trail: MMRLeafInsertTrail): Promise<void> {
+export async function appendTrailToDB(storageAdapter: StorageAdapter, trail: MMRLeafAppendedTrail): Promise<void> {
 	let maxIndex = Number((await storageAdapter.get("dag:trail:maxIndex")) ?? -1)
 	
 	for (const pair of trail) {

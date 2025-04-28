@@ -2,67 +2,66 @@ import { CID } from "../utils/CID.js"
 
 export const MINIMAL_ACCUMULATOR_ABI = [
 	{
-		name: "LeafInsert",
-		type: "event",
-		anonymous: false,
-		inputs: [
+		"anonymous": false,
+		"inputs": [
 			{
-				name: "leafIndex",
-				type: "uint32",
-				indexed: true,
-				internalType: "uint32",
+				"indexed": true,
+				"internalType": "uint32",
+				"name": "leafIndex",
+				"type": "uint32"
 			},
 			{
-				name: "previousInsertBlockNumber",
-				type: "uint32",
-				indexed: false,
-				internalType: "uint32",
+				"indexed": false,
+				"internalType": "uint32",
+				"name": "previousInsertBlockNumber",
+				"type": "uint32"
 			},
 			{
-				name: "newData",
-				type: "bytes",
-				indexed: false,
-				internalType: "bytes",
+				"indexed": false,
+				"internalType": "bytes",
+				"name": "newData",
+				"type": "bytes"
 			},
 			{
-				name: "leftInputs",
-				type: "bytes32[]",
-				indexed: false,
-				internalType: "bytes32[]",
-			},
+				"indexed": false,
+				"internalType": "bytes32[]",
+				"name": "mergeLeftHashes",
+				"type": "bytes32[]"
+			}
 		],
+		"name": "LeafAppended",
+		"type": "event"
+	},{
+		"inputs": [],
+		"name": "getRootCID",
+		"outputs": [
+			{
+				"internalType": "bytes",
+				"name": "rawCIDv1",
+				"type": "bytes"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
 	},
 	{
-		name: "getAccumulatorData",
-		type: "function",
-		stateMutability: "view",
-		inputs: [],
-		outputs: [
+		"inputs": [],
+		"name": "getState",
+		"outputs": [
 			{
-				name: "",
-				type: "uint256",
-				internalType: "uint256",
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			},
 			{
-				name: "",
-				type: "bytes32[32]",
-				internalType: "bytes32[32]",
-			},
+				"internalType": "bytes32[32]",
+				"name": "",
+				"type": "bytes32[32]"
+			}
 		],
-	},
-	{
-		name: "getLatestCID",
-		type: "function",
-		stateMutability: "view",
-		inputs: [],
-		outputs: [
-			{
-				name: "",
-				type: "bytes",
-				internalType: "bytes",
-			},
-		],
-	},
+		"stateMutability": "view",
+		"type": "function"
+	}
 ] as const
 
 // Canonical dag-cbor/sha2-256/CIDv1 null node CID

@@ -1,6 +1,6 @@
 import { CID } from "../../utils/CID"
-import type { NormalizedLeafInsertEvent, newLeafSubscriber, PeakWithHeight, LeafRecord } from "../../types/types"
-import { getAccumulatorData, getLeafInsertLogs, getLatestCID } from "../../ethereum/commonCalls"
+import type { NormalizedLeafAppendedtEvent, newLeafSubscriber, PeakWithHeight, LeafRecord } from "../../types/types"
+import { getState, getLeafAppendedLogs, getRootCID } from "../../ethereum/commonCalls"
 import {
 	getLeafIndexesWithMissingNewData,
 	getLeafRecord,
@@ -9,10 +9,10 @@ import {
 import { getAndResolveCID } from "./ipfsHelpers"
 import { commitLeafToMMR } from "./mmrHelpers"
 import { StorageAdapter } from "../../interfaces/StorageAdapter"
-import { walkBackLeafInsertLogsOrThrow } from "../../utils/walkBackLogsOrThrow"
+import { walkBackLeafAppendedLogsOrThrow } from "../../utils/walkBackLogsOrThrow"
 import { computePreviousRootCIDAndPeaksWithHeights, getRootCIDFromPeaks } from "../merkleMountainRange/mmrUtils"
 import { IpfsAdapter } from "../../interfaces/IpfsAdapter"
-import { getLeafRecordFromNormalizedLeafInsertEvent, uint8ArrayToHexString } from "../../utils/codec"
+import { getLeafRecordFromNormalizedLeafAppendedtEvent, uint8ArrayToHexString } from "../../utils/codec"
 import { MerkleMountainRange } from "../merkleMountainRange/MerkleMountainRange"
 // ================================================
 // REAL-TIME EVENT MONITORING
@@ -30,14 +30,14 @@ export async function syncBackwardsFromLatest(
 	ethereumHttpRpcUrl: string,
 	contractAddress: string,
 	setLastProcessedBlock: (block: number) => void,
-	getAccumulatorDataCalldataOverride?: string,
+	getStateCalldataOverride?: string,
 	eventTopicOverride?: string,
 	maxBlockRangePerRpcCall = 1000,
 ): Promise<void> {
-	const { meta, peaks } = await getAccumulatorData({
+	const { meta, peaks } = await getState({
 		ethereumHttpRpcUrl,
 		contractAddress,
-		getAccumulatorDataCalldataOverride,
+		getStateCalldataOverride,
 	})
 	const currentLeafIndex = meta.leafCount - 1
 	const currentBlock = meta.previousInsertBlockNumber
@@ -77,9 +77,9 @@ export async function syncBackwardsFromLatest(
 	// --- Batch event fetching ---
 	for (let endBlock = currentBlock; endBlock >= minBlock; endBlock -= maxBlockRangePerRpcCall) {
 		const startBlock = Math.max(minBlock, endBlock - maxBlockRangePerRpcCall + 1)
-		console.log(`[Client] \u{1F4E6} Checking blocks ${startBlock} to ${endBlock} for LeafInsert events...`)
-		// Get the LeafInsert event logs
-		const logs: NormalizedLeafInsertEvent[] = await getLeafInsertLogs({
+		console.log(`[Client] \u{1F4E6} Checking blocks ${startBlock} to ${endBlock} for LeafAppended events...`)
+		// Get the LeafAppended event logs
+		const logs: NormalizedLeafAppendedtEvent[] = await getLeafAppendedLogs({
 			ethereumHttpRpcUrl,
 			contractAddress,
 			fromBlock: startBlock,
@@ -87,9 +87,9 @@ export async function syncBackwardsFromLatest(
 			eventTopicOverride,
 		})
 
-		if (logs.length > 0) console.log(`[Client] \u{1F343} Found ${logs.length} LeafInsert events`)
+		if (logs.length > 0) console.log(`[Client] \u{1F343} Found ${logs.length} LeafAppended events`)
 
-		// Process the LeafInsert event logs
+		// Process the LeafAppended event logs
 		for (const event of logs.sort((a, b) => b.leafIndex - a.leafIndex)) {
 			if (event.leafIndex !== --oldestProcessedLeafIndex)
 				throw new Error(
@@ -99,7 +99,7 @@ export async function syncBackwardsFromLatest(
 			const { previousRootCID, previousPeaksWithHeights } = await computePreviousRootCIDAndPeaksWithHeights(
 				currentPeaksWithHeights,
 				event.newData,
-				event.leftInputs,
+				event.mergeLeftHashes,
 			)
 			// Store the relevat data in the DB
 			await putLeafRecordInDB(storageAdapter, event.leafIndex, {
@@ -175,11 +175,11 @@ export async function startLiveSync(
 	getLiveSyncRunning: () => boolean,
 	setLiveSyncRunning: (isRUnning: boolean) => void,
 	setLiveSyncInterval: (interval: ReturnType<typeof setTimeout> | undefined) => void,
-	newLeafEventSubscribers: newLeafSubscriber[],
+	newLeafAppendedEventSubscribers: newLeafSubscriber[],
 	getLastProcessedBlock: () => number,
 	setLastProcessedBlock: (blockNumber: number) => void,
-	getAccumulatorDataCalldataOverride?: string,
-	getLatestCidCalldataOverride?: string,
+	getStateCalldataOverride?: string,
+	getRootCidCalldataOverride?: string,
 	eventTopicOverride?: string,
 	pollIntervalMs = 10_000,
 ): Promise<void> {
@@ -209,9 +209,9 @@ export async function startLiveSync(
 			setWs,
 			getLastProcessedBlock,
 			setLastProcessedBlock,
-			newLeafEventSubscribers,
+			newLeafAppendedEventSubscribers,
 			contractAddress,
-			getAccumulatorDataCalldataOverride,
+			getStateCalldataOverride,
 			eventTopicOverride,
 		})
 	} else {
@@ -222,11 +222,11 @@ export async function startLiveSync(
 			contractAddress,
 			getLiveSyncRunning,
 			setLiveSyncInterval,
-			newLeafEventSubscribers,
+			newLeafAppendedEventSubscribers,
 			getLastProcessedBlock,
 			setLastProcessedBlock,
-			getAccumulatorDataCalldataOverride,
-			getLatestCidCalldataOverride,
+			getStateCalldataOverride,
+			getRootCidCalldataOverride,
 			eventTopicOverride,
 			pollIntervalMs,
 		})
@@ -333,11 +333,11 @@ export function startPollingSync(params: {
 	contractAddress: string
 	getLiveSyncRunning: () => boolean
 	setLiveSyncInterval: (interval: ReturnType<typeof setTimeout> | undefined) => void
-	newLeafEventSubscribers: newLeafSubscriber[]
+	newLeafAppendedEventSubscribers: newLeafSubscriber[]
 	getLastProcessedBlock: () => number
 	setLastProcessedBlock: (blockNumber: number) => void
-	getAccumulatorDataCalldataOverride?: string
-	getLatestCidCalldataOverride?: string
+	getStateCalldataOverride?: string
+	getRootCidCalldataOverride?: string
 	eventTopicOverride?: string
 	pollIntervalMs?: number
 }) {
@@ -348,25 +348,25 @@ export function startPollingSync(params: {
 		contractAddress,
 		getLiveSyncRunning,
 		setLiveSyncInterval,
-		newLeafEventSubscribers,
+		newLeafAppendedEventSubscribers,
 		getLastProcessedBlock,
 		setLastProcessedBlock,
-		getAccumulatorDataCalldataOverride,
-		getLatestCidCalldataOverride,
+		getStateCalldataOverride,
+		getRootCidCalldataOverride,
 		eventTopicOverride,
 		pollIntervalMs,
 	} = params
 	const poll = async () => {
 		try {
-			const result = await getAccumulatorData({
+			const result = await getState({
 				ethereumHttpRpcUrl,
 				contractAddress,
-				getAccumulatorDataCalldataOverride,
+				getStateCalldataOverride,
 			})
 			const { meta } = result
 			const youngestBlockToCheck = meta.previousInsertBlockNumber
 			if (youngestBlockToCheck > getLastProcessedBlock()) {
-				const newEvents = await getLeafInsertLogs({
+				const newEvents = await getLeafAppendedLogs({
           ethereumHttpRpcUrl,
           contractAddress,
           fromBlock: getLastProcessedBlock() + 1,
@@ -374,15 +374,15 @@ export function startPollingSync(params: {
           eventTopicOverride,
         })
 				for (const event of newEvents) {
-					await processNewLeafEvent({
+					await processNewLeafAppendedEvent({
 						mmr,
 						storageAdapter,
 						ethereumHttpRpcUrl,
 						contractAddress,
 						event,
-						newLeafEventSubscribers,
-						getAccumulatorDataCalldataOverride,
-						getLatestCidCalldataOverride,
+						newLeafAppendedEventSubscribers,
+						getStateCalldataOverride,
+						getRootCidCalldataOverride,
 						eventTopicOverride,
 					})
 				}
@@ -407,12 +407,13 @@ export function startSubscriptionSync( params: {
 	setWs: (ws: WebSocket | undefined) => void,
 	getLastProcessedBlock: () => number,
 	setLastProcessedBlock: (block: number) => void,
-	newLeafEventSubscribers: newLeafSubscriber[],
+	newLeafAppendedEventSubscribers: newLeafSubscriber[],
 	contractAddress: string,
-	getAccumulatorDataCalldataOverride?: string,
+	getStateCalldataOverride?: string,
+	getRootCidCalldataOverride?: string,
 	eventTopicOverride?: string,
 }): void {
-	const { mmr, storageAdapter, ethereumHttpRpcUrl, ethereumWsRpcUrl, ws, setWs, getLastProcessedBlock, setLastProcessedBlock, newLeafEventSubscribers, contractAddress, getAccumulatorDataCalldataOverride, eventTopicOverride } = params
+	const { mmr, storageAdapter, ethereumHttpRpcUrl, ethereumWsRpcUrl, ws, setWs, getLastProcessedBlock, setLastProcessedBlock, newLeafAppendedEventSubscribers, contractAddress, getStateCalldataOverride, getRootCidCalldataOverride, eventTopicOverride } = params
 	if (!ethereumWsRpcUrl) {
 		console.error("[Client] No ETHEREUM_WS_RPC_URL set. Cannot start subscription sync.")
 		return
@@ -451,15 +452,15 @@ export function startSubscriptionSync( params: {
 				console.log(`[Client] New block: ${blockHash}. Fetching events...`)
 				// Get latest block number and process new events
 				try {
-					const { meta } = await getAccumulatorData({
+					const { meta } = await getState({
 						ethereumHttpRpcUrl,
 						contractAddress,
-						getAccumulatorDataCalldataOverride,
+						getStateCalldataOverride,
 					})
 					const currentLastProcessedBlock = getLastProcessedBlock()
 					const latestBlock = meta.previousInsertBlockNumber
 					if (latestBlock > currentLastProcessedBlock) {
-						const newEvents = await getLeafInsertLogs({
+						const newEvents = await getLeafAppendedLogs({
 							ethereumHttpRpcUrl,
 							contractAddress,
 							fromBlock: currentLastProcessedBlock + 1,
@@ -467,14 +468,15 @@ export function startSubscriptionSync( params: {
 							eventTopicOverride,
 						})
 						for (const event of newEvents) {
-							await processNewLeafEvent({
+							await processNewLeafAppendedEvent({
 								mmr,
 								storageAdapter,
 								ethereumHttpRpcUrl,
 								contractAddress,
 								event,
-								newLeafEventSubscribers,
-								getAccumulatorDataCalldataOverride,
+								newLeafAppendedEventSubscribers,
+								getStateCalldataOverride,
+								getRootCidCalldataOverride,
 								eventTopicOverride,
 							})
 						}
@@ -497,25 +499,25 @@ export function startSubscriptionSync( params: {
 	}
 }
 // Sends a new leaf event to the DB and (if applicable) to the MMR), backfilling if necessary.
-export async function processNewLeafEvent( params: {
+export async function processNewLeafAppendedEvent( params: {
 	mmr: MerkleMountainRange,
 	storageAdapter: StorageAdapter,
 	ethereumHttpRpcUrl: string,
 	contractAddress: string,
-	event: NormalizedLeafInsertEvent,
-	newLeafEventSubscribers: newLeafSubscriber[],
-	getAccumulatorDataCalldataOverride?: string,
-	getLatestCidCalldataOverride?: string,
+	event: NormalizedLeafAppendedtEvent,
+	newLeafAppendedEventSubscribers: newLeafSubscriber[],
+	getStateCalldataOverride?: string,
+	getRootCidCalldataOverride?: string,
 	eventTopicOverride?: string,
 }): Promise<void> {
-	const { mmr, storageAdapter, ethereumHttpRpcUrl, contractAddress, event, newLeafEventSubscribers, getAccumulatorDataCalldataOverride, getLatestCidCalldataOverride, eventTopicOverride } = params
+	const { mmr, storageAdapter, ethereumHttpRpcUrl, contractAddress, event, newLeafAppendedEventSubscribers, getStateCalldataOverride, getRootCidCalldataOverride, eventTopicOverride } = params
 	// handle DB
 	await processNewLeafEventForDB(
 		storageAdapter,
 		ethereumHttpRpcUrl,
 		contractAddress,
 		event,
-		newLeafEventSubscribers,
+		newLeafAppendedEventSubscribers,
 		eventTopicOverride,
 	)
 	// handle MMR
@@ -526,22 +528,22 @@ export async function processNewLeafEvent( params: {
 		event.newData,
 	)
 	// Handle subscribers
-	for (const callback of newLeafEventSubscribers) callback(event.leafIndex, uint8ArrayToHexString(event.newData))
+	for (const callback of newLeafAppendedEventSubscribers) callback(event.leafIndex, uint8ArrayToHexString(event.newData))
 	// SANITY CHECK
 	// === THE FOLLOWING CODE BLOCK CAN BE REMOVED. IT IS JUST A SANITY CHECK. ===
-	const { meta } = await getAccumulatorData({
+	const { meta } = await getState({
 		ethereumHttpRpcUrl,
 		contractAddress,
-		getAccumulatorDataCalldataOverride,
+		getStateCalldataOverride,
 	})
 	// This sanity check only makes sense when the node is fully synced
 	if (mmr.leafCount - 1 === meta.leafCount - 1) {
 		try {
 			const localRootCid = await mmr.rootCIDAsBase32()
-			const onChainRootCid = await getLatestCID({
+			const onChainRootCid = await getRootCID({
 				ethereumHttpRpcUrl,
 				contractAddress,
-				getLatestCidCalldataOverride,
+				getRootCidCalldataOverride,
 			})
 			if (localRootCid !== onChainRootCid.toString()) {
 				console.warn(
@@ -565,8 +567,8 @@ async function processNewLeafEventForDB(
 	storageAdapter: StorageAdapter,
 	ethereumHttpRpcUrl: string,
 	contractAddress: string,
-	event: NormalizedLeafInsertEvent,
-	newLeafEventSubscribers: newLeafSubscriber[],
+	event: NormalizedLeafAppendedtEvent,
+	newLeafAppendedEventSubscribers: newLeafSubscriber[],
 	eventTopicOverride?: string,
 ): Promise<void> {
 	const highestContiguousLeafIndex = await storageAdapter.getHighestContiguousLeafIndexWithData()
@@ -578,7 +580,7 @@ async function processNewLeafEventForDB(
 			`[Client] \u{1F4CC} Missing event for leaf indexes ${highestContiguousLeafIndex + 1} to ${event.leafIndex - 1}. Getting them now...`,
 		)
 		// Walk back through the previousInsertBlockNumber's to get the missing leaves
-		const pastEvents: NormalizedLeafInsertEvent[] = await walkBackLeafInsertLogsOrThrow(
+		const pastEvents: NormalizedLeafAppendedtEvent[] = await walkBackLeafAppendedLogsOrThrow(
 			ethereumHttpRpcUrl,
 			contractAddress,
 			event.leafIndex - 1,
@@ -593,7 +595,7 @@ async function processNewLeafEventForDB(
 				ethereumHttpRpcUrl,
 				contractAddress,
 				pastEvents[i],
-				newLeafEventSubscribers,
+				newLeafAppendedEventSubscribers,
 				eventTopicOverride
 			)
 		}
@@ -601,7 +603,7 @@ async function processNewLeafEventForDB(
 	}
 
 	// Store the event in the DB
-	await putLeafRecordInDB(storageAdapter, event.leafIndex, getLeafRecordFromNormalizedLeafInsertEvent(event))
+	await putLeafRecordInDB(storageAdapter, event.leafIndex, getLeafRecordFromNormalizedLeafAppendedtEvent(event))
 }
 
 export async function processNewLeafEventForMMR(
@@ -643,11 +645,11 @@ export async function processNewLeafEventForMMR(
 	)
 }
 
-export function onNewLeaf(newLeafEventSubscribers: newLeafSubscriber[], callback: (index: number, data: string) => void): () => void {
-	newLeafEventSubscribers.push(callback)
+export function onNewLeaf(newLeafAppendedEventSubscribers: newLeafSubscriber[], callback: (index: number, data: string) => void): () => void {
+	newLeafAppendedEventSubscribers.push(callback)
 	// Return unsubscribe function
 	return () => {
-		const idx = newLeafEventSubscribers.indexOf(callback)
-		if (idx !== -1) newLeafEventSubscribers.splice(idx, 1)
+		const idx = newLeafAppendedEventSubscribers.indexOf(callback)
+		if (idx !== -1) newLeafAppendedEventSubscribers.splice(idx, 1)
 	}
 }

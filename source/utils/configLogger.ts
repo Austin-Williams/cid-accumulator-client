@@ -11,7 +11,7 @@ export function logConfig(contractAddress: string, config: AccumulatorClientConf
 	console.log(`[Client] ⚙ Config: IPFS_PIN_IF_POSSIBLE: ${config.IPFS_PIN_IF_POSSIBLE}`)
 	console.log(`[Client] ⚙ Config: IPFS_PROVIDE_IF_POSSIBLE: ${config.IPFS_PROVIDE_IF_POSSIBLE}`)
 	console.log(`[Client] ⚙ Config: DB_PATH: ${config.DB_PATH ?? "undefined"}`)
-	console.log(`[Client] ⚙ Config: GET_LATEST_CID_CALLDATA_OVERRIDE: ${config.GET_LATEST_CID_CALLDATA_OVERRIDE ?? "undefined"}`)
-	console.log(`[Client] ⚙ Config: GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE: ${config.GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE ?? "undefined"}`)
-	console.log(`[Client] ⚙ Config: LEAF_INSERT_EVENT_SIGNATURE_OVERRIDE: ${config.LEAF_INSERT_EVENT_SIGNATURE_OVERRIDE ?? "undefined"}`)
+	console.log(`[Client] ⚙ Config: GET_ROOT_CID_CALLDATA_OVERRIDE: ${config.GET_ROOT_CID_CALLDATA_OVERRIDE ?? "undefined"}`)
+	console.log(`[Client] ⚙ Config: GET_STATE_CALLDATA_OVERRIDE: ${config.GET_STATE_CALLDATA_OVERRIDE ?? "undefined"}`)
+	console.log(`[Client] ⚙ Config: LEAF_APPENDED_EVENT_SIGNATURE_OVERRIDE: ${config.LEAF_APPENDED_EVENT_SIGNATURE_OVERRIDE ?? "undefined"}`)
 }

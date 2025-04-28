@@ -2,7 +2,7 @@ import { AccumulatorClientConfig, IpfsNamespace } from "../../types/types"
 import { StorageAdapter } from "../../interfaces/StorageAdapter"
 import { SyncNamespace } from "../../types/types"
 import { getSyncNamespace } from "./syncNamespace"
-import { getAccumulatorData } from "../../ethereum/commonCalls"
+import { getState } from "../../ethereum/commonCalls"
 import { MerkleMountainRange } from "../merkleMountainRange/MerkleMountainRange"
 
 export async function initSync(
@@ -11,17 +11,17 @@ export async function initSync(
 	storageAdapter: StorageAdapter,
 	ipfs: IpfsNamespace,
 	mmr: MerkleMountainRange,
-	getAccumulatorDataCalldataOverride: string | undefined,
+	getStateCalldataOverride: string | undefined,
 	eventTopicOverride: string | undefined,
 ): Promise<SyncNamespace> {
 	// Check if Ethereum connection is working
 	console.log("[Client] \u{1F440} Checking Ethereum connection...")
 	let lastProcessedBlock: number = 0
 	try {
-		const { meta } = await getAccumulatorData({
+		const { meta } = await getState({
 			ethereumHttpRpcUrl: config.ETHEREUM_HTTP_RPC_URL,
 			contractAddress: contractAddress,
-			getAccumulatorDataCalldataOverride: config.GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE,
+			getStateCalldataOverride: config.GET_STATE_CALLDATA_OVERRIDE,
 		})
 		console.log(`[Client] 🔗 Connected to Ethereum. Target contract address: ${contractAddress}`)
 		lastProcessedBlock = meta.deployBlockNumber - 1
@@ -38,8 +38,8 @@ export async function initSync(
 		config.ETHEREUM_WS_RPC_URL,
 		contractAddress,
 		lastProcessedBlock,
-		getAccumulatorDataCalldataOverride,
-		config.GET_LATEST_CID_CALLDATA_OVERRIDE,
+		getStateCalldataOverride,
+		config.GET_ROOT_CID_CALLDATA_OVERRIDE,
 		eventTopicOverride,
 		config.ETHEREUM_MAX_BLOCK_RANGE_PER_HTTP_RPC_CALL ?? 1000,
 	)

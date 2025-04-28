@@ -47,11 +47,11 @@ You'll see verbose logs in the console showing syncing progress.
 [Client] 🔗 Connected to Ethereum. Target contract address: <0xYOUR_CONTRACT_ADDRESS>
 [Client] 🔁 Syncing backwards from block 8200764 to block 8147142 (53622 blocks), grabbing 1000 blocks per RPC call.
 [Client] 🔎 Simultaneously checking IPFS for older root CIDs as we discover them.
-[Client] 📦 Checking blocks 8199765 to 8200764 for LeafInsert events...
-[Client] 🍃 Found 7 LeafInsert events
-[Client] 📦 Checking blocks 8198765 to 8199764 for LeafInsert events...
-[Client] 🍃 Found 5 LeafInsert events
-[Client] 📦 Checking blocks 8197765 to 8198764 for LeafInsert events...
+[Client] 📦 Checking blocks 8199765 to 8200764 for LeafAppended events...
+[Client] 🍃 Found 7 LeafAppended events
+[Client] 📦 Checking blocks 8198765 to 8199764 for LeafAppended events...
+[Client] 🍃 Found 5 LeafAppended events
+[Client] 📦 Checking blocks 8197765 to 8198764 for LeafAppended events...
 ...
 [Client] 📥 Downloaded all data for root CID bafyreid...n5kpy74e from IPFS.
 [Client] 🙌 Successfully resolved all remaining data from IPFS!
@@ -155,16 +155,16 @@ export const defaultConfig: AccumulatorClientConfig = {
 	// If undefined, will default to '.db/accumulator.json' (relative to the current working directory).
 	DB_PATH: undefined,
 
-	// (Advanced, optional) Override calldata for the getLatestCID() contract call.
+	// (Advanced, optional) Override calldata for the getRootCID() contract call.
 	// Only set if your contract uses a nonstandard method signature.
-	GET_LATEST_CID_CALLDATA_OVERRIDE: undefined,
+	GET_ROOT_CID_CALLDATA_OVERRIDE: undefined,
 
-	// (Advanced, optional) Override calldata for the getAccumulatorData() contract call.
+	// (Advanced, optional) Override calldata for the getState() contract call.
 	// Only set if your contract uses a nonstandard method signature.
-	GET_ACCUMULATOR_DATA_CALLDATA_OVERRIDE: undefined,
+	GET_STATE_CALLDATA_OVERRIDE: undefined,
 
-	// (Advanced, optional) Override the event signature for LeafInsert events.
+	// (Advanced, optional) Override the event signature for LeafAppended events.
 	// Only set if your contract uses a nonstandard event signature.
-	LEAF_INSERT_EVENT_SIGNATURE_OVERRIDE: undefined,
+	LEAF_APPENDED_EVENT_SIGNATURE_OVERRIDE: undefined,
 }
 ```

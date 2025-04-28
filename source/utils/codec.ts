@@ -6,7 +6,7 @@ import {
 	CIDDataPair,
 	DagCborEncodedData,
 	LeafRecord,
-	NormalizedLeafInsertEvent,
+	NormalizedLeafAppendedtEvent,
 	PeakWithHeight,
 } from "../types/types"
 
@@ -82,13 +82,13 @@ export function hexStringToUint8Array(hex: string): Uint8Array {
 	return bytes
 }
 
-// Converts a NormalizedLeafInsertEvent to a JSON string (serializes newData and leftInputs)
-export function normalizedLeafInsertEventToString(event: NormalizedLeafInsertEvent): string {
+// Converts a NormalizedLeafAppendedtEvent to a JSON string (serializes newData and mergeLeftHashes)
+export function normalizedLeafAppendedtEventToString(event: NormalizedLeafAppendedtEvent): string {
 	return JSON.stringify({
 		leafIndex: event.leafIndex,
 		previousInsertBlockNumber: event.previousInsertBlockNumber,
 		newData: uint8ArrayToHexString(event.newData),
-		leftInputs: event.leftInputs.map((cid) => cid.toString()),
+		mergeLeftHashes: event.mergeLeftHashes.map((cid) => cid.toString()),
 		blockNumber: event.blockNumber,
 		transactionHash: event.transactionHash,
 		removed: event.removed,
@@ -108,21 +108,21 @@ export async function stringToPeakWithHeightArray(str: string): Promise<PeakWith
 	)
 }
 
-// Converts a JSON string back to a NormalizedLeafInsertEvent (parses newData and leftInputs)
-export function stringToNormalizedLeafInsertEvent(str: string): NormalizedLeafInsertEvent {
+// Converts a JSON string back to a NormalizedLeafAppendedtEvent (parses newData and mergeLeftHashes)
+export function stringToNormalizedLeafAppendedtEvent(str: string): NormalizedLeafAppendedtEvent {
 	const obj = JSON.parse(str)
 	return {
 		leafIndex: obj.leafIndex,
 		previousInsertBlockNumber: obj.previousInsertBlockNumber,
 		newData: hexStringToUint8Array(obj.newData),
-		leftInputs: obj.leftInputs.map((cidStr: string) => CID.parse(cidStr)),
+		mergeLeftHashes: obj.mergeLeftHashes.map((cidStr: string) => CID.parse(cidStr)),
 		blockNumber: obj.blockNumber,
 		transactionHash: obj.transactionHash,
 		removed: obj.removed,
 	}
 }
 
-export function getLeafRecordFromNormalizedLeafInsertEvent(event: NormalizedLeafInsertEvent): LeafRecord {
+export function getLeafRecordFromNormalizedLeafAppendedtEvent(event: NormalizedLeafAppendedtEvent): LeafRecord {
 	return {
 		newData: event.newData,
 		event,
