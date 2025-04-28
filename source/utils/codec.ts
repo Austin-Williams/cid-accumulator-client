@@ -115,7 +115,7 @@ export function stringToNormalizedLeafAppendedtEvent(str: string): NormalizedLea
 		leafIndex: obj.leafIndex,
 		previousInsertBlockNumber: obj.previousInsertBlockNumber,
 		newData: hexStringToUint8Array(obj.newData),
-		mergeLeftHashes: obj.mergeLeftHashes.map((cidStr: string) => CID.parse(cidStr)),
+		mergeLeftHashes: (obj.mergeLeftHashes ?? []).map((cidStr: string) => CID.parse(cidStr)),
 		blockNumber: obj.blockNumber,
 		transactionHash: obj.transactionHash,
 		removed: obj.removed,
