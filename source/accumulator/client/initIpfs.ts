@@ -18,6 +18,10 @@ export async function initIpfs(
 		config.IPFS_PUT_IF_POSSIBLE,
 		config.IPFS_PIN_IF_POSSIBLE,
 		config.IPFS_PROVIDE_IF_POSSIBLE,
+		config.REMOTE_PIN_BASE_URL
+			? { baseUrl: config.REMOTE_PIN_BASE_URL, headers: config.REMOTE_PIN_HEADERS ?? {} }
+			: undefined,
+		config.REMOTE_PIN_FAILURE_THRESHOLD,
 	)
 
 	let shouldPut = config.IPFS_PUT_IF_POSSIBLE && config.IPFS_API_URL !== undefined

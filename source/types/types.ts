@@ -11,6 +11,9 @@ export interface AccumulatorClientConfig {
 	IPFS_PUT_IF_POSSIBLE: boolean
 	IPFS_PIN_IF_POSSIBLE: boolean
 	IPFS_PROVIDE_IF_POSSIBLE: boolean
+	REMOTE_PIN_BASE_URL: string | undefined
+	REMOTE_PIN_HEADERS: Record<string, string> | undefined
+	REMOTE_PIN_FAILURE_THRESHOLD: number | undefined
 	DB_PATH: string | undefined
 	GET_ROOT_CID_CALLDATA_OVERRIDE: string | undefined
 	GET_STATE_CALLDATA_OVERRIDE: string | undefined
