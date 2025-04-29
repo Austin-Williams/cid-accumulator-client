@@ -69,25 +69,24 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 				`[UniversalIpfsAdapter.putBlock] ‼️ CID/Data pair is invalid. dagCborEncodedData: ${dagCborEncodedData}, expectedCID: ${cid.toString()}`,
 			)
 		}
-		if (!this.shouldPut) return
 
-		const url = `${this.apiUrl}/api/v0/block/put?format=dag-cbor&mhtype=sha2-256&pin=${this.shouldPin}`
-		const form = new FormData()
-		form.append("data", new Blob([dagCborEncodedData]))
-		const res = await fetch(url, {
-			method: "POST",
-			body: form,
-			// fetch sets Content-Type for multipart automatically
-		})
-		if (!res.ok) throw new Error(`IPFS block/put failed: ${res.status} ${res.statusText}`)
-
-		// Verify returned CID
-		const response = await res.json()
-		const returnedCid = CID.parse(response.Key)
-		if (returnedCid.toString() !== cid.toString()) {
-			console.warn(
-				`[UniversalIpfsAdapter.putBlock] ‼️ CID returned by the IPFS API was ${returnedCid.toString()} but you expected ${cid.toString()}`,
-			)
+		// Local IPFS API put/pin if configured
+		if (this.shouldPut) {
+			const url = `${this.apiUrl}/api/v0/block/put?format=dag-cbor&mhtype=sha2-256&pin=${this.shouldPin}`
+			const form = new FormData()
+			form.append("data", new Blob([dagCborEncodedData]))
+			const res = await fetch(url, { method: "POST", body: form })
+			if (!res.ok) throw new Error(`IPFS block/put failed: ${res.status} ${res.statusText}`)
+			// Verify returned CID
+			const response = await res.json()
+			const returnedCid = CID.parse(response.Key)
+			if (returnedCid.toString() !== cid.toString()) {
+				console.warn(
+					`[UniversalIpfsAdapter.putBlock] ‼️ CID returned by the IPFS API was ${returnedCid.toString()} but you expected ${cid.toString()}`,
+				)
+			}
+		} else {
+			console.debug(`[UniversalIpfsAdapter] Skipping local IPFS API put/pin; will attempt remote pin only`)
 		}
 
 		// Remote pin via Pinning Service API if configured
@@ -103,12 +102,12 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 					},
 					body: JSON.stringify({ cid: cid.toString() }),
 				}))
-				console.debug(`[UniversalIpfsAdapter] 🟢🟢🟢🟢🟢 Remote pin succeeded for CID ${cid.toString()}`)
+				console.debug(`[UniversalIpfsAdapter] 🟢 Remote pin succeeded for CID ${cid.toString()}`)
 			} catch (err) {
 				this.remotePinFailures++
-				console.error(`[UniversalIpfsAdapter] 🔴🔴🔴🔴🔴 Remote pin failed (#${this.remotePinFailures}):`, err)
+				console.error(`[UniversalIpfsAdapter] 🔴 Remote pin failed (#${this.remotePinFailures}):`, err)
 				if (this.remotePinFailures >= this.remotePinFailureThreshold) {
-					console.log(`[UniversalIpfsAdapter] 🔴🔴🔴🔴🔴 Disabling remote pinning after ${this.remotePinFailures} failures`)
+					console.log(`[UniversalIpfsAdapter] 🔴 Disabling remote pinning after ${this.remotePinFailures} failures`)
 					this.remotePinConfig = undefined
 				}
 			}
