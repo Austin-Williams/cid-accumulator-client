@@ -10,16 +10,18 @@ export function getIpfsNamespace(
 	shouldPut: boolean,
 	shouldPin: boolean,
 	shouldProvide: boolean,
+	shouldRemotePin: boolean,
 ): IpfsNamespace {
 	return {
 		ipfsAdapter: ipfs,
 		shouldPut,
 		shouldPin,
 		shouldProvide,
+		shouldRemotePin,
 		getAndResolveCID: (cid: CID<unknown, 113, 18, 1>, opts?: { signal?: AbortSignal }) =>
 			getAndResolveCID(ipfs, storageAdapter, cid, opts),
-		rePinAllDataToIPFS: () => rePinAllDataToIPFS(ipfs, storageAdapter, shouldPut, shouldPin, shouldProvide),
+		rePinAllDataToIPFS: () => rePinAllDataToIPFS(ipfs, storageAdapter, shouldPut, shouldPin, shouldProvide, shouldRemotePin),
 		putPinProvideToIPFS: ({ cid, dagCborEncodedData }: { cid: CID<unknown, 113, 18, 1>; dagCborEncodedData: DagCborEncodedData }) =>
-			putPinProvideToIPFS(ipfs, shouldPut, shouldProvide, cid, dagCborEncodedData),
+			putPinProvideToIPFS(ipfs, shouldPut, shouldProvide, shouldRemotePin, cid, dagCborEncodedData),
 	}
 }

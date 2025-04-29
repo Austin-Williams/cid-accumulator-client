@@ -101,6 +101,7 @@ export type IpfsNamespace = {
 	shouldPut: boolean
 	shouldPin: boolean
 	shouldProvide: boolean
+	shouldRemotePin: boolean
 	getAndResolveCID: (cid: CID<unknown, 113, 18, 1>, opts?: { signal?: AbortSignal }) => Promise<boolean>
 	rePinAllDataToIPFS: () => void
 	putPinProvideToIPFS: ({ cid, dagCborEncodedData }: { cid: CID<unknown, 113, 18, 1>, dagCborEncodedData: DagCborEncodedData }) => Promise<boolean>

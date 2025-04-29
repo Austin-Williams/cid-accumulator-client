@@ -65,9 +65,10 @@ export function rePinAllDataToIPFS(
 	shouldPut: boolean,
 	shouldPin: boolean,
 	shouldProvide: boolean,
+	shouldRemotePin: boolean,
 ): void {
-	if (!shouldPin) {
-		console.log(`[Client] ℹ️ rePinAllDataToIPFS skipped because this.shouldPin == false`)
+	if (!shouldPin && !shouldRemotePin) {
+		console.log(`[Client] ℹ️ rePinAllDataToIPFS skipped because this.shouldPin == false and this.shouldRemotePin == false`)
 		return
 	}
 	storageAdapter.get("dag:trail:maxIndex").then((result) => {
@@ -84,7 +85,7 @@ export function rePinAllDataToIPFS(
 					const pair: CIDDataPair | null = await getCIDDataPairFromDB(storageAdapter, i)
 					if (!pair) throw new Error(`[Client] Expected CIDDataPair for leaf ${i}`)
 
-					const putOk = await putPinProvideToIPFS(ipfs, shouldPut, shouldProvide, pair.cid, pair.dagCborEncodedData)
+					const putOk = await putPinProvideToIPFS(ipfs, shouldPut, shouldProvide, shouldRemotePin, pair.cid, pair.dagCborEncodedData)
 					if (!putOk) {
 						failed++
 						continue
@@ -107,6 +108,7 @@ export async function putPinProvideToIPFS(
 	ipfs: IpfsAdapter,
 	shouldPut: boolean,
 	shouldProvide: boolean,
+	shouldRemotePin: boolean,
 	cid: CID<unknown, 113, 18, 1>,
 	dagCborEncodedData: DagCborEncodedData,
 ): Promise<boolean> {
@@ -116,7 +118,7 @@ export async function putPinProvideToIPFS(
 		console.error('[putPinProvideToIPFS] 💥 CID verification failed:', err, { cid, dagCborEncodedData });
 		return false;
 	}
-	if (shouldPut) {
+	if (shouldPut || shouldRemotePin) {
 		try {
 			await ipfs.putBlock(cid, dagCborEncodedData)
 		} catch (err) {

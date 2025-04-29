@@ -29,6 +29,7 @@ export async function initIpfs(
 	let shouldProvide = config.IPFS_PROVIDE_IF_POSSIBLE && config.IPFS_API_URL !== undefined && isNodeJs()
 	if (!shouldPut) shouldPin = false // Doesn't make sense to pin if they don't put
 	if (!shouldPin) shouldProvide = false // Doesn't make sense to provide if they don't pin
+	let shouldRemotePin = config.REMOTE_PIN_BASE_URL !== undefined
 
 	// Check if IPFS Gateway connection is working
 	console.log("[Client] \u{1F440} Checking IPFS Gateway connection...")
@@ -71,13 +72,14 @@ export async function initIpfs(
 	}
 
 	// Initialize the IPFS namespace object
-	const ipfs = getIpfsNamespace(ipfsAdapter, storageAdapter, shouldPut, shouldPin, shouldProvide)
+	const ipfs = getIpfsNamespace(ipfsAdapter, storageAdapter, shouldPut, shouldPin, shouldProvide, shouldRemotePin)
 
 	console.log("[Client] 📜 IPFS Capability Summary:")
 	console.log(`[Client] 📜 Summary: IPFS Gateway connected: YES`)
 	console.log(`[Client] 📜 Summary: IPFS API PUT is set up: ${shouldPut ? "YES" : "NO"}`)
 	console.log(`[Client] 📜 Summary: IPFS API PIN is set up: ${shouldPin ? "YES" : "NO"}`)
 	console.log(`[Client] 📜 Summary: IPFS API PROVIDE is set up: ${shouldProvide ? "YES" : "NO"}`)
+	console.log(`[Client] 📜 Summary: IPFS API REMOTE PIN is set up: ${shouldRemotePin ? "YES" : "NO"}`)
 
 	return ipfs
 }
