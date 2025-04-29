@@ -6,7 +6,7 @@
  * @param id number (request id, default 1)
  * @returns Promise<any> (result field from response)
  */
-export async function ethRpcFetch(ethereumHttpRpcUrl: string, method: string, params: any[], id = 1): Promise<any> {
+async function rawEthRpcFetch(ethereumHttpRpcUrl: string, method: string, params: any[], id = 1): Promise<any> {
 	const res = await fetch(ethereumHttpRpcUrl, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -45,7 +45,7 @@ export async function callContractView(
 	data: string,
 	blockTag: string = "latest",
 ) {
-	return ethRpcFetch(ethereumHttpRpcUrl, "eth_call", [{ to: contractAddress, data }, blockTag])
+	return rawEthRpcFetch(ethereumHttpRpcUrl, "eth_call", [{ to: contractAddress, data }, blockTag])
 }
 
 /**
@@ -91,3 +91,11 @@ export function createThrottledRpcFetch<T extends (...args: any[]) => Promise<an
 	}
 	return throttled as T
 }
+
+// Throttled + retry-enabled RPC fetch (200ms min delay, 5 retries, 100ms jitter, factor=2)
+export const ethRpcFetch = createThrottledRpcFetch(rawEthRpcFetch, {
+	minDelayMs: 200,
+	maxRetries: 5,
+	jitterMs: 100,
+	backoffFactor: 2,
+})
