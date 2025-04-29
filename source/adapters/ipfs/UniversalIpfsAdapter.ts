@@ -36,7 +36,7 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 		this.shouldPin = wantsToPin && apiUrl !== undefined
 		this.shouldProvide = wantsToProvide && apiUrl !== undefined && !isBrowser()
 		this.remotePinConfig = remotePinConfig
-		if (remotePinConfig) this.remotePinRateLimiter = new RateLimiter(200)
+		if (remotePinConfig) this.remotePinRateLimiter = new RateLimiter(1000)
 		if (remotePinFailureThreshold !== undefined) this.remotePinFailureThreshold = remotePinFailureThreshold
 	}
 
@@ -94,14 +94,20 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 			const { baseUrl, headers } = this.remotePinConfig
 			const limiter = this.remotePinRateLimiter
 			try {
-				await limiter.execute(() => fetch(`${baseUrl}/pins`, {
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						...headers,
-					},
-					body: JSON.stringify({ cid: cid.toString() }),
-				}))
+				await limiter.execute(async () => {
+					const res = await fetch(`${baseUrl}/pins`, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...headers,
+						},
+						body: JSON.stringify({ cid: cid.toString() }),
+					})
+					if (!res.ok) {
+						throw new Error(`Remote pin failed: ${res.status} ${res.statusText}`)
+					}
+					return res
+				})
 				console.debug(`[UniversalIpfsAdapter] 🟢 Remote pin succeeded for CID ${cid.toString()}`)
 			} catch (err) {
 				this.remotePinFailures++
