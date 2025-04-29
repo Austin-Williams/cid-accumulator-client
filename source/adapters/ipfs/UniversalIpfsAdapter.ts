@@ -14,6 +14,9 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 	private shouldPut: boolean
 	private shouldPin: boolean
 	private shouldProvide: boolean
+	private remotePinConfig?: { baseUrl: string; headers: Record<string, string> }
+	private remotePinFailures = 0
+	private remotePinFailureThreshold = 5
 
 	constructor(
 		gatewayUrl: string,
@@ -21,6 +24,7 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 		wantsToPut: boolean,
 		wantsToPin: boolean,
 		wantsToProvide: boolean,
+		remotePinConfig?: { baseUrl: string; headers: Record<string, string> },
 	) {
 		// Remove trailing '/ipfs' or '/ipfs/' and any trailing slash from the gateway URL
 		this.gatewayUrl = gatewayUrl.replace(/\/?ipfs\/?$/, "").replace(/\/$/, "")
@@ -28,7 +32,9 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 		this.shouldPut = wantsToPut && apiUrl !== undefined
 		this.shouldPin = wantsToPin && apiUrl !== undefined
 		this.shouldProvide = wantsToProvide && apiUrl !== undefined && !isBrowser()
+		this.remotePinConfig = remotePinConfig
 	}
+
 	/**
 	 * Get a block by CID from IPFS.
 	 */
@@ -42,7 +48,7 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 		await verifyCIDAgainstDagCborEncodedDataOrThrow(
 			data,
 			cid,
-			`[UniversalIpfsAdapter.getBlock] 🚨 IPFS Gateway returned invalid data!`,
+			`[UniversalIpfsAdapter.getBlock] IPFS Gateway returned invalid data!`,
 		)
 
 		return data
@@ -55,7 +61,7 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 	async putBlock(cid: CID<unknown, 113, 18, 1>, dagCborEncodedData: DagCborEncodedData): Promise<void> {
 		if (!verifyCIDAgainstDagCborEncodedData(dagCborEncodedData, cid)) {
 			console.warn(
-				`[UniversalIpfsAdapter.putBlock] ‼️ CID/Data pair is invalid. dagCborEncodedData: ${dagCborEncodedData}, expectedCID: ${cid.toString()}`,
+				`[UniversalIpfsAdapter.putBlock] CID/Data pair is invalid. dagCborEncodedData: ${dagCborEncodedData}, expectedCID: ${cid.toString()}`,
 			)
 		}
 		if (!this.shouldPut) return
@@ -75,8 +81,29 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 		const returnedCid = CID.parse(response.Key)
 		if (returnedCid.toString() !== cid.toString()) {
 			console.warn(
-				`[UniversalIpfsAdapter.putBlock] ‼️ CID returned by the IPFS API was ${returnedCid.toString()} but you expected ${cid.toString()}`,
+				`[UniversalIpfsAdapter.putBlock] CID returned by the IPFS API was ${returnedCid.toString()} but you expected ${cid.toString()}`,
 			)
+		}
+
+		// Remote pin via Pinning Service API if configured
+		if (this.remotePinConfig) {
+			try {
+				await fetch(`${this.remotePinConfig.baseUrl}/pins`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...this.remotePinConfig.headers,
+					},
+					body: JSON.stringify({ cid: cid.toString() }),
+				})
+			} catch (err) {
+				this.remotePinFailures++
+				console.error(`[UniversalIpfsAdapter] Remote pin failed (#${this.remotePinFailures}):`, err)
+				if (this.remotePinFailures >= this.remotePinFailureThreshold) {
+					console.log(`[UniversalIpfsAdapter] Disabling remote pinning after ${this.remotePinFailures} failures`)
+					this.remotePinConfig = undefined
+				}
+			}
 		}
 	}
 
