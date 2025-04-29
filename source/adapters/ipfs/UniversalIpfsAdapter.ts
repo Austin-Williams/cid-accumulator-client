@@ -95,7 +95,7 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 			const limiter = this.remotePinRateLimiter
 			try {
 				await limiter.execute(async () => {
-					const res = await fetch(`${baseUrl}/pins`, {
+					const res = await fetch(baseUrl, {
 						method: "POST",
 						headers: {
 							"Content-Type": "application/json",
