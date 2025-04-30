@@ -21,11 +21,9 @@ export function getEventTopic(signature: string): string {
 	)
 }
 
-/**
- * Parses the ABI-encoded result of a contract call to getRootCID() -> bytes.
- * @param abiResult string (0x-prefixed hex string)
- * @returns Uint8Array (decoded bytes)
- */
+// Parses the ABI-encoded result of a contract call to getRootCID() -> bytes.
+// @param abiResult string (0x-prefixed hex string)
+// @returns Uint8Array (decoded bytes)
 import { hexStringToUint8Array } from "../utils/codec"
 
 export function parseGetRootCIDResult(abiResult: string): Uint8Array {

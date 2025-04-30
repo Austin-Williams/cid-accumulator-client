@@ -16,10 +16,8 @@ import { initSync } from "./initSync"
 import { getDataNamespace } from "./dataNamespace"
 import { logConfig } from "../../utils/configLogger"
 
-/**
- * AccumulatorClient: Unified entry point for accumulator logic in any environment.
- * Pass in the appropriate IpfsAdapter and StorageAdapter for your environment.
- */
+// AccumulatorClient: Unified entry point for accumulator logic in any environment.
+// Pass in the appropriate IpfsAdapter and StorageAdapter for your environment.
 export class AccumulatorClient {
 	public contractAddress: string
 	public config: AccumulatorClientConfig
@@ -101,10 +99,8 @@ export class AccumulatorClient {
 		console.log("[Client] 🟢 Client is ready to use.")
 	}
 
-	/**
-	 * Gracefully shuts down the AccumulatorClient: stops live sync and closes the DB if possible.
-	 * Safe to call multiple times.
-	 */
+	// Gracefully shuts down the AccumulatorClient: stops live sync and closes the DB if possible.
+	// Safe to call multiple times.
 	public async shutdown(): Promise<void> {
 		if (!this.sync || !this.ipfs || !this.storage)
 			throw new Error("Not all namespaces present. This should never happen.")

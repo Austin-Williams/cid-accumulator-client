@@ -1,8 +1,6 @@
 import type { StorageAdapter } from "../../interfaces/StorageAdapter"
 
-/**
- * MemoryAdapter implements StorageAdapter for tests/in-memory use.
- */
+// MemoryAdapter implements StorageAdapter for tests/in-memory use.
 export class MemoryAdapter implements StorageAdapter {
 	private store: Map<string, any> = new Map()
 

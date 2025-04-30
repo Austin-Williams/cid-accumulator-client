@@ -3,11 +3,9 @@ import { encodeBlock } from "../../utils/codec"
 import type { PeakWithHeight } from "../../types/types"
 import { NULL_CID } from "../../utils/constants"
 
-/**
- * Computes the root CID from an array of peak CIDs, left-to-right bagging (canonical MMR logic).
- * @param peaks Array of CIDs (left-to-right order)
- * @returns The root CID (or the zero CID if peaks is empty)
- */
+// Computes the root CID from an array of peak CIDs, left-to-right bagging (canonical MMR logic).
+// @param peaks Array of CIDs (left-to-right order)
+// @returns The root CID (or the zero CID if peaks is empty)
 export async function getRootCIDFromPeaks(peaks: CID<unknown, 113, 18, 1>[]): Promise<CID<unknown, 113, 18, 1>> {
 	if (peaks.length === 0) {
 		return NULL_CID

@@ -12,14 +12,12 @@ import { getCIDDataPairFromDB, putLeafRecordInDB } from "./storageHelpers"
 // pinning, providing and retreiving CIDs and blocks.
 // ====================================================
 
-/**
- * Recursively attempts to resolve the entire DAG from a given root CID using the IPFS adapter.
- * If it succeeds, adds all the leaf data to the database.
- * Can optionally reject on abort signal to allow for cancellation.
- *
- * @param cid - The root CID to resolve.
- * @returns true if all leaf data are available, false otherwise.
- */
+// Recursively attempts to resolve the entire DAG from a given root CID using the IPFS adapter.
+// If it succeeds, adds all the leaf data to the database.
+// Can optionally reject on abort signal to allow for cancellation.
+
+// @param cid - The root CID to resolve.
+// @returns true if all leaf data are available, false otherwise.
 export async function getAndResolveCID(
 	ipfs: IpfsAdapter,
 	storageAdapter: StorageAdapter,
@@ -51,14 +49,11 @@ export async function getAndResolveCID(
 	}
 }
 
-/**
- * Re-pins all CIDs and related data to IPFS.
- * Data is automatically pinned during rebuildAndProvideMMR and processNewLeafEvent,
- * so this function does not need to be called during normal use.
- * This is just a helper in case your IPFS node has lost data and you want to make sure it is
- * pinning all the data you have synced.
- * @returns A Promise that resolves when all data has been pinned to IPFS.
- */
+// Re-pins all CIDs and related data to IPFS.
+// Data is automatically pinned during rebuildAndProvideMMR and processNewLeafEvent,
+// so this function does not need to be called during normal use.
+// This is just a helper in case your IPFS node has lost data and you want to make sure it is
+// pinning all the data you have synced.
 export function rePinAllDataToIPFS(
 	ipfs: IpfsAdapter,
 	storageAdapter: StorageAdapter,

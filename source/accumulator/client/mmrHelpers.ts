@@ -15,14 +15,10 @@ export async function commitLeafToMMR(
 	await appendTrailToDB(storageAdapter, trail)
 }
 
-/**
- * Rebuilds the Merkle Mountain Range (MMR) by committing all uncommitted leaves and pinning the full trail to IPFS.
- *
- * This function iterates through all uncommitted leaves and commits them one by one.
- * For each leaf, it adds the leaf to the MMR, stores the trail in the DB, and pins the full trail to IPFS.
- *
- * @returns A Promise that resolves when the MMR has been rebuilt from all uncommitted leaves.
- */
+// Rebuilds the Merkle Mountain Range (MMR) by committing all uncommitted leaves and pinning the full trail to IPFS.
+// This function iterates through all uncommitted leaves and commits them one by one.
+// For each leaf, it adds the leaf to the MMR, stores the trail in the DB, and pins the full trail to IPFS.
+// @returns A Promise that resolves when the MMR has been rebuilt from all uncommitted leaves.
 export async function rebuildMMR(
 	mmr: MerkleMountainRange,
 	storageAdapter: StorageAdapter,

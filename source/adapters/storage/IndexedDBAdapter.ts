@@ -97,11 +97,9 @@ export class IndexedDBAdapter implements StorageAdapter {
 		// IndexedDB does not require explicit close
 	}
 
-	/**
-	 * Creates an index of all entries keyed by a substring of their payload.
-	 * @param offset The starting index of the substring.
-	 * @param length The length of the substring.
-	 */
+	// Creates an index of all entries keyed by a substring of their payload.
+	// @param offset The starting index of the substring.
+	// @param length The length of the substring.
 	async createIndexByPayloadSlice(offset: number, length: number): Promise<Map<string, string[]>> {
 		const index = new Map<string, string[]>()
 		for await (const { value } of this.iterate("leaf:")) {

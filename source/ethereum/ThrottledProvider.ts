@@ -15,10 +15,8 @@ export class ThrottledProvider {
 	private logger: (...args: any[]) => void
 	private lastCallTimestamp: number = 0
 
-	/**
-	 * @param provider - Any compatible JSON-RPC provider (ethers.js, viem, etc)
-	 * @param opts - Throttling and retry options
-	 */
+	// @param provider - Any compatible JSON-RPC provider (ethers.js, viem, etc)
+	// @param opts - Throttling and retry options
 	constructor(provider: any, opts: ThrottledProviderOptions = {}) {
 		this.provider = provider
 		this.minDelayMs = opts.minDelayMs ?? 200

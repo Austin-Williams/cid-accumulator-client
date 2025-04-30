@@ -1,11 +1,9 @@
-/**
- * Makes a raw Ethereum JSON-RPC call using fetch.
- * @param ethereumHttpRpcUrl string (Ethereum node endpoint)
- * @param method string (JSON-RPC method)
- * @param params any[] (JSON-RPC params)
- * @param id number (request id, default 1)
- * @returns Promise<any> (result field from response)
- */
+// Makes a raw Ethereum JSON-RPC call using fetch.
+// @param ethereumHttpRpcUrl string (Ethereum node endpoint)
+// @param method string (JSON-RPC method)
+// @param params any[] (JSON-RPC params)
+// @param id number (request id, default 1)
+// @returns Promise<any> (result field from response)
 async function rawEthRpcFetch(ethereumHttpRpcUrl: string, method: string, params: any[], id = 1): Promise<any> {
 	const res = await fetch(ethereumHttpRpcUrl, {
 		method: "POST",
@@ -31,14 +29,12 @@ async function rawEthRpcFetch(ethereumHttpRpcUrl: string, method: string, params
 	return json.result
 }
 
-/**
- * Calls a contract view function (e.g., getState, getRootCID) using eth_call.
- * @param ethereumHttpRpcUrl string
- * @param contractAddress string
- * @param data string (ABI-encoded call data)
- * @param blockTag string (default: "latest")
- * @returns Promise<string> (ABI-encoded result)
- */
+// Calls a contract view function (e.g., getState, getRootCID) using eth_call.
+// @param ethereumHttpRpcUrl string
+// @param contractAddress string
+// @param data string (ABI-encoded call data)
+// @param blockTag string (default: "latest")
+// @returns Promise<string> (ABI-encoded result)
 export async function callContractView(
 	ethereumHttpRpcUrl: string,
 	contractAddress: string,
@@ -48,12 +44,10 @@ export async function callContractView(
 	return rawEthRpcFetch(ethereumHttpRpcUrl, "eth_call", [{ to: contractAddress, data }, blockTag])
 }
 
-/**
- * Wraps an async RPC function with throttling and retry logic.
- * @param fetchFn The async function to throttle (e.g., ethRpcFetch)
- * @param opts ThrottledProviderOptions
- * @returns A throttled version of fetchFn
- */
+// Wraps an async RPC function with throttling and retry logic.
+// @param fetchFn The async function to throttle (e.g., ethRpcFetch)
+// @param opts ThrottledProviderOptions
+// @returns A throttled version of fetchFn
 import { ThrottledProviderOptions } from "./ThrottledProvider"
 
 export function createThrottledRpcFetch<T extends (...args: any[]) => Promise<any>>(

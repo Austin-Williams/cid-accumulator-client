@@ -14,16 +14,15 @@ import { computePreviousRootCIDAndPeaksWithHeights, getRootCIDFromPeaks } from "
 import { IpfsAdapter } from "../../interfaces/IpfsAdapter"
 import { getLeafRecordFromNormalizedLeafAppendedtEvent, uint8ArrayToHexString } from "../../utils/codec"
 import { MerkleMountainRange } from "../merkleMountainRange/MerkleMountainRange"
+
 // ================================================
 // REAL-TIME EVENT MONITORING
 // Logic for watching the blockchain for new events
 // and keeping the accumulator node up-to-date.
 // ================================================
 
-/**
- * Syncs backwards from the latest leaf/block, fetching events and storing by leafIndex.
- * Uses on-chain metadata to determine where to start.
- */
+// Syncs backwards from the latest leaf/block, fetching events and storing by leafIndex.
+// Uses on-chain metadata to determine where to start.
 export async function syncBackwardsFromLatest(
 	ipfs: IpfsAdapter,
 	storageAdapter: StorageAdapter,
@@ -160,10 +159,8 @@ export async function syncBackwardsFromLatest(
 	await storageAdapter.persist()
 }
 
-/**
- * Listens for new events and keeps the node up-to-date in real time.
- * Automatically uses polling if subscriptions are not supported or no WS URL is provided.
- */
+// Listens for new events and keeps the node up-to-date in real time.
+// Automatically uses polling if subscriptions are not supported or no WS URL is provided.
 export async function startLiveSync(
 	mmr: MerkleMountainRange,
 	storageAdapter: StorageAdapter,
@@ -252,10 +249,8 @@ export function stopLiveSync(
 	}
 }
 
-/**
- * Attempts to detect if the given wsUrl supports Ethereum subscriptions (eth_subscribe).
- * Returns true if successful, false otherwise.
- */
+// Attempts to detect if the given wsUrl supports Ethereum subscriptions (eth_subscribe).
+// Returns true if successful, false otherwise.
 export async function detectSubscriptionSupport(wsUrl: string): Promise<boolean> {
 	if (!wsUrl.startsWith("ws://") && !wsUrl.startsWith("wss://")) {
 		console.log(`[Client] 👎 ETHEREUM_WS_RPC_URL is not a ws:// or wss:// URL: ${wsUrl}`)
@@ -297,7 +292,7 @@ export async function detectSubscriptionSupport(wsUrl: string): Promise<boolean>
 						}
 					}
 				} catch {
-					/* ignore parse errors */
+					// ignore parse errors
 				}
 			}
 			ws.onerror = () => {

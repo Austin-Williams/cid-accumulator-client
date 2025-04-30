@@ -10,11 +10,9 @@ export class MerkleMountainRange {
 
 	constructor() {}
 
-	/**
-	 * Subscribe to be notified whenever addLeafWithTrail is called.
-	 * @param callback Callback receiving the MMRLeafAppendedTrail for each new leaf
-	 * @returns Unsubscribe function
-	 */
+	// Subscribe to be notified whenever addLeafWithTrail is called.
+	// @param callback Callback receiving the MMRLeafAppendedTrail for each new leaf
+	// @returns Unsubscribe function
 	public subscribeToLeafAppendedTrail(callback: (trail: MMRLeafAppendedTrail) => void): () => void {
 		this.leafAppendedTrailSubscribers.push(callback);
 		return () => {
@@ -23,12 +21,10 @@ export class MerkleMountainRange {
 		};
 	}
 	
-	/**
-	 * Adds a new leaf to the MMR and computes all intermediate nodes.
-	 * @param newData - The raw data for the new leaf node to be added.
-	 * @param leafIndex - The expected leaf index for the new leaf.
-	 * @returns An array of CID and data pairs for leaf, all intermediate nodes, and the root
-	 */
+	// Adds a new leaf to the MMR and computes all intermediate nodes.
+	// @param newData - The raw data for the new leaf node to be added.
+	// @param leafIndex - The expected leaf index for the new leaf.
+	// @returns An array of CID and data pairs for leaf, all intermediate nodes, and the root
 	async addLeafWithTrail(leafIndex: number, newData: Uint8Array): Promise<MMRLeafAppendedTrail> {
 		if (this.leafCount !== leafIndex) throw new Error(`Expected leafIndex ${this.leafCount} but got ${leafIndex}`)
 
@@ -69,6 +65,9 @@ export class MerkleMountainRange {
 		return trail
 	}
 
+	// Returns the root CID and the trail of CID/Data pairs needed to compute the root.
+	// @returns An object containing the root CID and the trail of CID/Data pairs.
+	// The root is redundant (because the last item in the trail is the root) but convenient.
 	async rootCIDWithTrail(): Promise<{
 		root: CID<unknown, 113, 18, 1> // Redundant (because the last item in the trail is the root) but convenient
 		trail: MMRLeafAppendedTrail

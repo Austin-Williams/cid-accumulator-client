@@ -1,9 +1,7 @@
 import readline from "readline/promises"
 
-/**
- * Prompts the user for a yes/no answer. Accepts 'y', 'yes', 'n', 'no' (case-insensitive).
- * Returns true for yes, false for no.
- */
+// Prompts the user for a yes/no answer. Accepts 'y', 'yes', 'n', 'no' (case-insensitive).
+// Returns true for yes, false for no.
 export async function promptYesNo(question: string): Promise<boolean> {
 	const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 	const prompt = question.trim().replace(/[\s:]+$/, "") + " (y/n): "
@@ -21,11 +19,9 @@ export async function promptYesNo(question: string): Promise<boolean> {
 	}
 }
 
-/**
- * Prompts the user for a value. If acceptableValues is non-empty, only accepts those values.
- * If acceptableValues is empty and abortOnInvalid is false, returns any user input (free-form).
- * If abortOnInvalid is true, aborts on invalid input. Otherwise, re-prompts.
- */
+// Prompts the user for a value. If acceptableValues is non-empty, only accepts those values.
+// If acceptableValues is empty and abortOnInvalid is false, returns any user input (free-form).
+// If abortOnInvalid is true, aborts on invalid input. Otherwise, re-prompts.
 export async function promptUserChoice(
 	question: string,
 	acceptableValues: string[],

@@ -1,14 +1,12 @@
 import { getLeafAppendedLogForTargetLeafIndex } from "../ethereum/commonCalls"
 import { NormalizedLeafAppendedtEvent } from "../types/types"
 
-/**
- * Walks back along the previousInsertBlockNumber chain, starting from fromLeafIndex,
- * until toLeafIndex is reached (inclusive). Returns logs in order from oldest to newest.
- * Throws if a log is missing or the chain cannot be completed.
- * WARNING: This is a very slow way to walk back because it requires one (cheap) RPC call per leaf.
- * This is intended to be used only for filling in a few missed leaves for accumulator nodes that are already synced
- * and are processing live events.
- */
+// Walks back along the previousInsertBlockNumber chain, starting from fromLeafIndex,
+// until toLeafIndex is reached (inclusive). Returns logs in order from oldest to newest.
+// Throws if a log is missing or the chain cannot be completed.
+// WARNING: This is a very slow way to walk back because it requires one (cheap) RPC call per leaf.
+// This is intended to be used only for filling in a few missed leaves for accumulator nodes that are already synced
+// and are processing live events.
 export async function walkBackLeafAppendedLogsOrThrow(
 	ethereumHttpRpcUrl: string,
 	contractAddress: string,

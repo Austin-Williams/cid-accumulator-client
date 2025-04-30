@@ -67,11 +67,9 @@ export async function getLeafRecord(
 	}
 }
 
-/**
- * Searches from leafIndex 0 to maxLeafIndex for leaves that are missing newData.
- * Returns an array of leaf indexes that are missing newData.
- * Used for sanity checking.
- */
+// Searches from leafIndex 0 to maxLeafIndex for leaves that are missing newData.
+// Returns an array of leaf indexes that are missing newData.
+// Used for sanity checking.
 export async function getLeafIndexesWithMissingNewData(
 	storageAdapter: StorageAdapter,
 	maxLeafIndex: number,
@@ -85,11 +83,9 @@ export async function getLeafIndexesWithMissingNewData(
 	return missing
 }
 
-/**
- * Appends all trail pairs to the DB in an efficient, sequential manner.
- * Each pair is stored as dag:trail:<index>. The max index is tracked by dag:trail:maxIndex.
- * Does not store a CID/Data pair if it is already in the DB
- */
+// Appends all trail pairs to the DB in an efficient, sequential manner.
+// Each pair is stored as dag:trail:<index>. The max index is tracked by dag:trail:maxIndex.
+// Does not store a CID/Data pair if it is already in the DB
 export async function appendTrailToDB(storageAdapter: StorageAdapter, trail: MMRLeafAppendedTrail): Promise<void> {
 	let maxIndex = Number((await storageAdapter.get("dag:trail:maxIndex")) ?? -1)
 	

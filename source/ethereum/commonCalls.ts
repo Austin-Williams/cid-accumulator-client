@@ -5,12 +5,10 @@ import { AccumulatorMetadata, NormalizedLeafAppendedtEvent, PeakWithHeight, RawE
 import { CID } from "../utils/CID.js"
 import { contractPeakHexToMmrCid } from "../utils/codec"
 
-/**
- * Fetches the latest CID from the contract using a raw JSON-RPC call and ABI decoding.
- * @param ethereumHttpRpcUrl - The Ethereum node RPC URL
- * @param contractAddress - The deployed contract address
- * @returns The latest CID as a multiformats.CID object
- */
+// Fetches the latest CID from the contract using a raw JSON-RPC call and ABI decoding.
+// @param ethereumHttpRpcUrl - The Ethereum node RPC URL
+// @param contractAddress - The deployed contract address
+// @returns The latest CID as a multiformats.CID object
 export async function getRootCID(params: {
 	ethereumHttpRpcUrl: string
 	contractAddress: string
@@ -70,15 +68,13 @@ function toHexBlock(n: number): string {
 	return "0x" + n.toString(16)
 }
 
-/**
- * Finds LeafAppended events using eth_getLogs.
- * @param ethereumHttpRpcUrl string
- * @param contractAddress string
- * @param eventTopic string (keccak256 hash of event signature)
- * @param fromBlock string (hex or "latest")
- * @param toBlock string (hex or "latest")
- * @returns Promise<any[]> (array of log objects)
- */
+// Finds LeafAppended events using eth_getLogs.
+// @param ethereumHttpRpcUrl string
+// @param contractAddress string
+// @param eventTopic string (keccak256 hash of event signature)
+// @param fromBlock string (hex or "latest")
+// @param toBlock string (hex or "latest")
+// @returns Promise<NormalizedLeafAppendedtEvent[]> (array of log objects)
 export async function getLeafAppendedLogs(params: {
 	ethereumHttpRpcUrl: string
 	contractAddress: string
@@ -121,16 +117,14 @@ export async function getLeafAppendedLogs(params: {
 	return parsedLogs
 }
 
-/**
- * Finds a LeafAppended log for a specific leaf index using eth_getLogs.
- * @param ethereumHttpRpcUrl string
- * @param contractAddress string
- * @param eventTopic string (keccak256 hash of event signature)
- * @param fromBlock string (hex or "latest")
- * @param toBlock string (hex or "latest")
- * @param targetLeafIndex number (the leaf index to filter for)
- * @returns Promise<any[]> (array of log objects for that leaf index)
- */
+// Finds a LeafAppended log for a specific leaf index using eth_getLogs.
+// @param ethereumHttpRpcUrl string
+// @param contractAddress string
+// @param eventTopic string (keccak256 hash of event signature)
+// @param fromBlock string (hex or "latest")
+// @param toBlock string (hex or "latest")
+// @param targetLeafIndex number (the leaf index to filter for)
+// @returns Promise<NormalizedLeafAppendedtEvent | null> (array of log objects for that leaf index)
 export async function getLeafAppendedLogForTargetLeafIndex(params: {
 	ethereumHttpRpcUrl: string
 	contractAddress: string

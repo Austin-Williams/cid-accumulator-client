@@ -39,10 +39,8 @@ export class UniversalIpfsAdapter implements IpfsAdapter {
 		return data
 	}
 
-	/**
-	 * Put a block (dag-cbor, sha2-256, CIDv1) to IPFS. Pinning is optional, controlled by config.
-	 * Note: The CID is not used directly; IPFS computes it from the data.
-	 */
+	// Put a block (dag-cbor, sha2-256, CIDv1) to IPFS. Pinning is optional, controlled by config.
+	// Note: The CID is not used directly; IPFS computes it from the data.
 	async putBlock(cid: CID<unknown, 113, 18, 1>, dagCborEncodedData: DagCborEncodedData): Promise<void> {
 		if (!verifyCIDAgainstDagCborEncodedData(dagCborEncodedData, cid)) {
 			console.warn(`🚨🚨🚨🚨🚨🚨 CID/Data pair is invalid. dagCborEncodedData: ${dagCborEncodedData}, expectedCID: ${cid.toString()}`)

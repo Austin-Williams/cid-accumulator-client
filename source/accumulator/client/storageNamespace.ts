@@ -8,9 +8,7 @@ import {
 	iterateTrailPairs,
 } from "./storageHelpers"
 
-/**
- * Returns a StorageNamespace object with methods bound to the given storage adapter.
- */
+// Returns a StorageNamespace object with methods bound to the given storage adapter.
 export async function getStorageNamespace(storageAdapter: StorageAdapter): Promise<StorageNamespace> {
 	const sync = {
 		storageAdapter: storageAdapter,

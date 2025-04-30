@@ -23,29 +23,26 @@ function isInternalNode(obj: unknown): obj is { L: CID<unknown, 113, 18, 1>; R: 
 	)
 }
 
-/**
- * Recursively resolves a Merkle tree (DAG) from a given root CID using the provided blockstore.
- *
- * This function traverses the DAG in depth-first order, decoding each IPLD node using dag-cbor.
- * It collects and returns all leaf node data (as Uint8Array) in a flat array.
- *
- * If any block referenced by the DAG is missing from the blockstore, the function will throw an Error
- * with a descriptive message indicating which CID could not be found. This behavior is intentional:
- * callers should be prepared to handle thrown errors if the DAG is incomplete or unavailable.
- *
- * @param cid - The root CID of the Merkle tree to resolve. Must be CID.
- * @param blockstore - An object implementing a get(cid) method that returns the raw block data for a CID.
- * @returns Promise<Uint8Array[]> Resolves to an array of all leaf node data found in the DAG.
- * @throws Error if any block is missing or if an unexpected node structure is encountered.
- *
- * @example
- * try {
- *   const leaves = await resolveMerkleTreeOrThrow(rootCid, ipfsBlockstore)
- *   // All leaves are present, do something with them
- * } catch (err) {
- *   // Handle the missing block or DAG structure error
- * }
- */
+// Recursively resolves a Merkle tree (DAG) from a given root CID using the provided blockstore.
+// This function traverses the DAG in depth-first order, decoding each IPLD node using dag-cbor.
+// It collects and returns all leaf node data (as Uint8Array) in a flat array.
+//
+// If any block referenced by the DAG is missing from the blockstore, the function will throw an Error
+// with a descriptive message indicating which CID could not be found. This behavior is intentional:
+// callers should be prepared to handle thrown errors if the DAG is incomplete or unavailable.
+//
+// @param cid - The root CID of the Merkle tree to resolve. Must be CID.
+// @param blockstore - An object implementing a get(cid) method that returns the raw block data for a CID.
+// @returns Promise<Uint8Array[]> Resolves to an array of all leaf node data found in the DAG.
+// @throws Error if any block is missing or if an unexpected node structure is encountered.
+//
+// @example
+// try {
+//   const leaves = await resolveMerkleTreeOrThrow(rootCid, ipfsBlockstore)
+//   // All leaves are present, do something with them
+// } catch (err) {
+//   // Handle the missing block or DAG structure error
+// }
 export async function resolveMerkleTreeOrThrow(
 	cid: CID<unknown, 113, 18, 1>,
 	blockstore: IpfsAdapter,
