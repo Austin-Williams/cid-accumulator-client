@@ -11,13 +11,15 @@ export interface AccumulatorClientConfig {
 	IPFS_PUT_IF_POSSIBLE: boolean
 	IPFS_PIN_IF_POSSIBLE: boolean
 	IPFS_PROVIDE_IF_POSSIBLE: boolean
-	REMOTE_PIN_BASE_URL: string | undefined
-	REMOTE_PIN_HEADERS: Record<string, string> | undefined
-	REMOTE_PIN_FAILURE_THRESHOLD: number | undefined
 	DB_PATH: string | undefined
 	GET_ROOT_CID_CALLDATA_OVERRIDE: string | undefined
 	GET_STATE_CALLDATA_OVERRIDE: string | undefined
 	LEAF_APPENDED_EVENT_SIGNATURE_OVERRIDE: string | undefined
+}
+
+export interface RemotePinnerConfig {
+	baseUrl: string
+	headers: Record<string, string>
 }
 
 export interface RawEthLog {
@@ -101,7 +103,6 @@ export type IpfsNamespace = {
 	shouldPut: boolean
 	shouldPin: boolean
 	shouldProvide: boolean
-	shouldRemotePin: boolean
 	getAndResolveCID: (cid: CID<unknown, 113, 18, 1>, opts?: { signal?: AbortSignal }) => Promise<boolean>
 	rePinAllDataToIPFS: () => void
 	putPinProvideToIPFS: ({ cid, dagCborEncodedData }: { cid: CID<unknown, 113, 18, 1>, dagCborEncodedData: DagCborEncodedData }) => Promise<boolean>

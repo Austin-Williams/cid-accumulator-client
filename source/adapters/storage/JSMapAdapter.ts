@@ -1,15 +1,11 @@
 import type { StorageAdapter } from "../../interfaces/StorageAdapter"
 
-/**
- * JSMapAdapter implements StorageAdapter using a native Map,
- * with persistence to a local file (JSON-serialized).
- * No external dependencies required. Suitable for moderate datasets (~100k entries).
- */
+// JSMapAdapter implements StorageAdapter using a native Map,
+// with persistence to a local file (JSON-serialized).
+// No external dependencies required. Suitable for moderate datasets (~100k entries).
 export class JSMapAdapter implements StorageAdapter {
-	/**
-	 * Returns the highest contiguous leafIndex N such that all keys 'leaf:0:newData' ... 'leaf:N:newData' exist and are not undefined/null.
-	 * This is efficient for the in-memory Map, and does not require iterating over all possible indexes if there are gaps at the end.
-	 */
+	// Returns the highest contiguous leafIndex N such that all keys 'leaf:0:newData' ... 'leaf:N:newData' exist and are not undefined/null.
+	// This is efficient for the in-memory Map, and does not require iterating over all possible indexes if there are gaps at the end.
 	async getHighestContiguousLeafIndexWithData(): Promise<number> {
 		// Collect all keys that match 'leaf:{number}:newData'
 		const indexes: number[] = []
@@ -87,11 +83,9 @@ export class JSMapAdapter implements StorageAdapter {
 		await this.persist()
 	}
 
-	/**
-	 * Creates an index of all entries keyed by a substring of their payload.
-	 * @param offset The starting index of the substring.
-	 * @param length The length of the substring.
-	 */
+	// Creates an index of all entries keyed by a substring of their payload.
+	// @param offset The starting index of the substring.
+	// @param length The length of the substring.
 	async createIndexByPayloadSlice(offset: number, length: number): Promise<Map<string, string[]>> {
 		const index = new Map<string, string[]>()
 		for (const [key, value] of this.store.entries()) {

@@ -48,7 +48,7 @@ export class AccumulatorClient {
 		// SET UP IPFS
 		this.ipfs = await initIpfs(this.config, this.storage!.storageAdapter)
 		// If IPFS is set up to pin, subscribe to MMR leaf inserts and pin all relevant CIDs
-		if (this.ipfs.shouldPin || this.ipfs.shouldRemotePin) {
+		if (this.ipfs.shouldPin) {
 			this.mmr.subscribeToLeafAppendedTrail(
 				(trail: MMRLeafAppendedTrail) => {
 					for (const {cid, dagCborEncodedData} of trail) {
