@@ -1,4 +1,7 @@
 # cid-accumulator-client
+
+> **⚠️ DEPRECATED ⚠️**: Please see [https://github.com/Austin-Williams/cid-accumulator-monorepo](https://github.com/Austin-Williams/cid-accumulator-monorepo) for the latest version.
+
 Universal JS/TS client for interacting with smart contracts that implement the CIDAccumulator pattern.
 
 ## Installation
